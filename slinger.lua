@@ -1,10 +1,11 @@
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
 
--- [ SERVICES & REMOTES ]
+-- [ RE-CHECK SERVICES ]
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local net = ReplicatedStorage:WaitForChild("Packages"):WaitForChild("_Index"):WaitForChild("sleitnick_net@0.2.0"):WaitForChild("net")
-local finishRemote = net:WaitForChild("RE/FishingCompleted")
-local buyWeatherRemote = net:WaitForChild("RF/PurchaseWeather")
+-- Pakai pcall supaya kalau jalurnya salah, menu tetap muncul gak macet
+local finishRemote = net:FindFirstChild("RE/FishingCompleted")
+local buyWeatherRemote = net:FindFirstChild("RF/PurchaseWeather")
 
 -- [ STATE ]
 local fishMode = { Instant = false, Blatant = false, Legit = false }
@@ -13,7 +14,7 @@ local blatantDelay = "0.42"
 
 -- [ WINDOW CREATION ]
 local Window = WindUI:CreateWindow({
-    Title = "Slinger Hub | VIP V7",
+    Title = "SLINGER HUB | VIP V8",
     Icon = "fish",
     Author = "Chloe X Style",
     Folder = "SlingerHub",
@@ -36,24 +37,24 @@ local FishSection = FishingTab:Section({ Title = "Fishing Features", Icon = "anc
 
 FishSection:Toggle({
     Title = "Instant Fishing",
-    Content = "Sangat Cepat - High Risk",
+    Content = "Sangat Cepat - Kilat",
     Callback = function(v) fishMode.Instant = v end
 })
 
 FishSection:Toggle({
     Title = "Blatant Mode",
-    Content = "Gunakan Delay di Bawah",
+    Content = "Atur Delay di Bawah",
     Callback = function(v) fishMode.Blatant = v end
 })
 
 FishSection:Toggle({
     Title = "Legit Mode",
-    Content = "Aman & Manusiawi",
+    Content = "Aman & Slow",
     Callback = function(v) fishMode.Legit = v end
 })
 
 FishSection:Input({
-    Title = "Blatant Delay",
+    Title = "Complete Delay",
     Placeholder = "0.42",
     Callback = function(v) blatantDelay = v end
 })
@@ -63,7 +64,7 @@ local AutoShopSection = AutoTab:Section({ Title = "Shop Features", Icon = "shopp
 
 AutoShopSection:Toggle({
     Title = "Auto Buy Weather",
-    Content = "Otomatis beli cuaca Meteor",
+    Content = "Otomatis beli Meteor",
     Callback = function(v) autoBuyWeather = v end
 })
 
@@ -88,26 +89,16 @@ task.spawn(function()
                 finishRemote:FireServer()
             end
         end)
-        
-        -- Auto Buy Weather (Meteor)
-        if autoBuyWeather then
+    end
+end)
+
+-- Auto Buy Weather Logic
+task.spawn(function()
+    while task.wait(5) do
+        if autoBuyWeather and buyWeatherRemote then
             pcall(function() buyWeatherRemote:InvokeServer("Meteor") end)
-            task.wait(10)
         end
     end
 end)
 
--- [ TELEPORT SECTION ]
-local TPSection = TeleportTab:Section({ Title = "Islands", Icon = "map" })
-local locations = {["Weather Machine"] = Vector3.new(-1471,-3,1929), ["Tropical Grove"] = Vector3.new(-2038,3,3650)}
-
-for name, pos in pairs(locations) do
-    TPSection:Button({
-        Title = "Teleport " .. name,
-        Callback = function() 
-            game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(pos) 
-        end
-    })
-end
-
-WindUI:Notify({ Title = "Slinger Hub", Content = "Menu Loaded! Chloe Style Active.", Duration = 5 })
+WindUI:Notify({ Title = "Slinger Hub", Content = "Menu Berhasil Dimuat!", Duration = 5 })
