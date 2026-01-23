@@ -1,12 +1,13 @@
 local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 
 local Window = Fluent:CreateWindow({
-    Title = "SLINGER HUB | BLATANT V3",
-    SubTitle = "Premium Version",
+    Title = "SLINGER HUB | VIP EDITION",
+    SubTitle = "Team Slinger",
     TabWidth = 160,
     Size = UDim2.fromOffset(580, 460),
     Acrylic = true,
-    Theme = "Dark"
+    Theme = "Dark",
+    MinimizeKey = Enum.KeyCode.LeftControl
 })
 
 local Tabs = {
@@ -16,51 +17,58 @@ local Tabs = {
     Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
 }
 
--- [ TAB EXCLUSIVE - BLATANT FEATURES ]
+-- [ TAB EXCLUSIVE - SETTINGAN PERSIS GAMBAR ]
 Tabs.Exclusive:AddSection("Blatant Automation")
 
-local BlatantToggle = Tabs.Exclusive:AddToggle("BlatantFishing", {Title = "Ultra Blatant V3", Default = false })
-local AutoCast = Tabs.Exclusive:AddToggle("AutoCast", {Title = "Auto Cast / Re-Cast", Default = false })
+local BlatantToggle = Tabs.Exclusive:AddToggle("BlatantV3", {Title = "Ultra Blatant V3", Default = false })
 
--- Logic Blatant Fishing (Sesuai Video 41931.mp4)
-BlatantToggle:OnChanged(function()
-    _G.Blatant = BlatantToggle.Value
-    task.spawn(function()
-        while _G.Blatant do
-            task.wait(0.01)
+-- Menambahkan kolom input manual seperti di foto PAHAJI HUB
+local CompDelay = Tabs.Exclusive:AddInput("CompleteDelay", {
+    Title = "Complete Delay",
+    Default = "0.42",
+    Placeholder = "Contoh: 0.42",
+    Callback = function(Value) end
+})
+
+local CanDelay = Tabs.Exclusive:AddInput("CancelDelay", {
+    Title = "Cancel Delay",
+    Default = "0.3",
+    Placeholder = "Contoh: 0.3",
+    Callback = function(Value) end
+})
+
+local RecastDelay = Tabs.Exclusive:AddInput("RecastDelay", {
+    Title = "Re-Cast Delay",
+    Default = "0.000",
+    Placeholder = "Contoh: 0.000",
+    Callback = function(Value) end
+})
+
+-- Logic Utama Blatant (Menggunakan Input di atas)
+task.spawn(function()
+    while task.wait(0.1) do
+        if BlatantToggle.Value then
             pcall(function()
-                -- Mengirim sinyal "FishingCompleted" secara instan ke server
-                local net = game:GetService("ReplicatedStorage").Packages._Index["sleitnick_net@0.2.0"].net
-                net["RE/FishingCompleted"]:FireServer()
+                local delayTime = tonumber(CompDelay.Value) or 0.42
+                task.wait(delayTime)
+                game:GetService("ReplicatedStorage").Packages._Index["sleitnick_net@0.2.0"].net["RE/FishingCompleted"]:FireServer()
+                
+                -- Jeda sebelum lempar lagi (Re-Cast)
+                task.wait(tonumber(RecastDelay.Value) or 0)
             end)
         end
-    end)
+    end
 end)
 
--- [ TAB MAIN - PERFORMANCE ]
-Tabs.Main:AddSection("Performance Boost")
+-- [ PERFORMA ]
+Tabs.Main:AddSection("Performance")
+Tabs.Main:AddToggle("UnlockFPS", {Title = "Unlock FPS", Default = true }):OnChanged(function(v)
+    if v then setfpscap(999) else setfpscap(60) end
+end)
 
-Tabs.Main:AddButton({
-    Title = "Unlock FPS",
-    Callback = function()
-        setfpscap(999) -- Membuka batas FPS
-        Fluent:Notify({Title = "System", Content = "FPS Unlocked!", Duration = 3})
-    end
-})
-
--- [ TAB SHOP - PROTECTION ]
-Tabs.Shop:AddSection("Protection")
-Tabs.Shop:AddToggle("AutoFav", {Title = "Auto Favorite Secret/Mythic", Default = true })
-
--- [ SETTINGS ]
-Tabs.Settings:AddButton({
-    Title = "Boost FPS (Remove Textures)",
-    Callback = function()
-        for _, v in pairs(game:GetDescendants()) do
-            if v:IsA("BasePart") then v.Material = Enum.Material.SmoothPlastic end
-        end
-    end
-})
-
-Window:SelectTab(2) -- Langsung buka tab Exclusive
-Fluent:Notify({ Title = "Slinger Hub", Content = "Ultra Blatant V3 Loaded!", Duration = 5 })
+-- [ CONFIG SAVE MANAGER ]
+local SaveManager = Fluent:AddSaveManager()
+SaveManager:SetLibrary(Fluent)
+SaveManager:SetFolder("SlingerHub/FishIt")
+SaveManager:BuildConfigSection(Tabs.Settings)
+SaveManager:LoadAutoloadConfig()
