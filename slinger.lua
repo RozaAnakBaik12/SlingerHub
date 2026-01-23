@@ -2,12 +2,10 @@ local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/
 
 local Window = Fluent:CreateWindow({
     Title = "SLINGER HUB | VIP EDITION",
-    SubTitle = "Team Slinger",
+    SubTitle = "Categorized Features",
     TabWidth = 160,
     Size = UDim2.fromOffset(580, 460),
-    Acrylic = true,
-    Theme = "Dark",
-    MinimizeKey = Enum.KeyCode.LeftControl
+    Theme = "Dark"
 })
 
 local Tabs = {
@@ -17,56 +15,67 @@ local Tabs = {
     Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
 }
 
--- [ TAB EXCLUSIVE - SETTINGAN PERSIS GAMBAR ]
-Tabs.Exclusive:AddSection("Blatant Automation")
+-- [ TAB EXCLUSIVE - KATEGORI TERPISAH ]
+Tabs.Exclusive:AddSection("Fishing Modes")
 
+-- 1. MODE INSTANT (KILAT)
+local InstantToggle = Tabs.Exclusive:AddToggle("InstantFish", {Title = "Instant Fishing", Default = false })
+
+-- 2. MODE BLATANT (BAR-BAR DENGAN SETTING)
 local BlatantToggle = Tabs.Exclusive:AddToggle("BlatantV3", {Title = "Ultra Blatant V3", Default = false })
 
--- Menambahkan kolom input manual seperti di foto PAHAJI HUB
-local CompDelay = Tabs.Exclusive:AddInput("CompleteDelay", {
-    Title = "Complete Delay",
-    Default = "0.42",
-    Placeholder = "Contoh: 0.42",
-    Callback = function(Value) end
-})
+-- 3. MODE LEGIT (AMAN / SEPERTI ASLI)
+local LegitToggle = Tabs.Exclusive:AddToggle("LegitMode", {Title = "Legit Mode (Human-Like)", Default = false })
 
-local CanDelay = Tabs.Exclusive:AddInput("CancelDelay", {
-    Title = "Cancel Delay",
-    Default = "0.3",
-    Placeholder = "Contoh: 0.3",
-    Callback = function(Value) end
-})
+Tabs.Exclusive:AddSection("Blatant Settings")
+local CompDelay = Tabs.Exclusive:AddInput("CompDelay", {Title = "Complete Delay", Default = "0.42"})
+local CanDelay = Tabs.Exclusive:AddInput("CanDelay", {Title = "Cancel Delay", Default = "0.3"})
+local RecDelay = Tabs.Exclusive:AddInput("RecDelay", {Title = "Re-Cast Delay", Default = "0.000"})
 
-local RecastDelay = Tabs.Exclusive:AddInput("RecastDelay", {
-    Title = "Re-Cast Delay",
-    Default = "0.000",
-    Placeholder = "Contoh: 0.000",
-    Callback = function(Value) end
-})
-
--- Logic Utama Blatant (Menggunakan Input di atas)
+-- [ LOGIC PEMISAHAN FITUR ]
 task.spawn(function()
-    while task.wait(0.1) do
-        if BlatantToggle.Value then
-            pcall(function()
-                local delayTime = tonumber(CompDelay.Value) or 0.42
-                task.wait(delayTime)
-                game:GetService("ReplicatedStorage").Packages._Index["sleitnick_net@0.2.0"].net["RE/FishingCompleted"]:FireServer()
-                
-                -- Jeda sebelum lempar lagi (Re-Cast)
-                task.wait(tonumber(RecastDelay.Value) or 0)
-            end)
+    while task.wait() do
+        pcall(function()
+            local net = game:GetService("ReplicatedStorage").Packages._Index["sleitnick_net@0.2.0"].net
+            
+            if InstantToggle.Value then
+                -- Mode Instant: Tanpa Jeda sama sekali
+                net["RE/FishingCompleted"]:FireServer()
+                task.wait(0.01)
+            elseif BlatantToggle.Value then
+                -- Mode Blatant: Menggunakan Delay Input (0.42 sesuai gambar)
+                task.wait(tonumber(CompDelay.Value) or 0.42)
+                net["RE/FishingCompleted"]:FireServer()
+                task.wait(tonumber(RecDelay.Value) or 0)
+            elseif LegitToggle.Value then
+                -- Mode Legit: Delay acak agar tidak terkena ban
+                task.wait(math.random(1.5, 3.0))
+                net["RE/FishingCompleted"]:FireServer()
+            end
+        end)
+    end
+end)
+
+Tabs.Exclusive:AddSection("Automation")
+local AutoCast = Tabs.Exclusive:AddToggle("AutoCast", {Title = "Auto Cast / Re-Cast", Default = false })
+task.spawn(function()
+    while task.wait(1.5) do
+        if AutoCast.Value then
+            local tool = game.Players.LocalPlayer.Character:FindFirstChildOfClass("Tool")
+            if tool then tool:Activate() end
         end
     end
 end)
 
--- [ PERFORMA ]
-Tabs.Main:AddSection("Performance")
-Tabs.Main:AddToggle("UnlockFPS", {Title = "Unlock FPS", Default = true }):OnChanged(function(v)
+-- [ TETAP SERTAKAN FITUR PENTING LAINNYA ]
+Tabs.Shop:AddSection("Protection")
+Tabs.Shop:AddToggle("AutoFav", {Title = "Auto Favorite (Mythic+)", Default = true })
+Tabs.Shop:AddToggle("AutoSell", {Title = "Auto Sell All (60s)", Default = false })
+
+Tabs.Main:AddToggle("FPSBoost", {Title = "Unlock FPS", Default = true}):OnChanged(function(v)
     if v then setfpscap(999) else setfpscap(60) end
 end)
 
--- [ CONFIG SAVE MANAGER ]
 local SaveManager = Fluent:AddSaveManager()
 SaveManager:SetLibrary(Fluent)
 SaveManager:SetFolder("SlingerHub/FishIt")
