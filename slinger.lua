@@ -4,9 +4,16 @@ local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/rel
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local net = ReplicatedStorage:WaitForChild("Packages"):WaitForChild("_Index"):WaitForChild("sleitnick_net@0.2.0"):WaitForChild("net")
 
--- [ WINDOW CREATION ]
+-- [ STATE & CONFIG ]
+local fishMode = { Instant = false, Blatant = false, Legit = false }
+local autoBuyWeather = false
+local selectedWeather = "Meteor"
+local blatantDelay = "0.42"
+local autoSellEnabled = false
+
+-- [ WINDOW CREATION - CHLOE X STYLE ]
 local Window = WindUI:CreateWindow({
-    Title = "SLINGER HUB | V12 MERCHANT",
+    Title = "SLINGER HUB | V13 VIP",
     Icon = "fish",
     Author = "Chloe X Style",
     Folder = "SlingerHub",
@@ -15,7 +22,7 @@ local Window = WindUI:CreateWindow({
     KeySystem = false
 })
 
--- [ TABS ]
+-- [ TABS SESUAI CHLOE X - TIDAK ADA YANG DIHAPUS ]
 local FishingTab = Window:Tab({ Title = "Fishing", Icon = "fish" })
 local AutoTab = Window:Tab({ Title = "Automatically", Icon = "refresh-cw" })
 local TradingTab = Window:Tab({ Title = "Trading", Icon = "users" })
@@ -24,47 +31,43 @@ local QuestTab = Window:Tab({ Title = "Quest", Icon = "scroll" })
 local TeleportTab = Window:Tab({ Title = "Teleport", Icon = "map-pin" })
 local SettingsTab = Window:Tab({ Title = "Settings", Icon = "user-cog" })
 
--- [ FISHING - TETAP LENGKAP ]
-local FishSection = FishingTab:Section({ Title = "Fishing Modes", Icon = "anchor" })
-local fishMode = { Instant = false, Blatant = false, Legit = false }
-local blatantDelay = "0.42"
+-- [ TAB FISHING - FITUR TERPISAH ]
+local FishSection = FishingTab:Section({ Title = "Fishing Features", Icon = "anchor" })
 
-FishSection:Toggle({ Title = "Instant Fishing", Callback = function(v) fishMode.Instant = v end })
-FishSection:Toggle({ Title = "Blatant Mode", Callback = function(v) fishMode.Blatant = v end })
+FishSection:Toggle({ Title = "Instant Fishing", Content = "Auto Pull Instan", Callback = function(v) fishMode.Instant = v end })
+FishSection:Toggle({ Title = "Blatant Mode", Content = "Delay Sesuai Input", Callback = function(v) fishMode.Blatant = v end })
+FishSection:Toggle({ Title = "Legit Mode", Content = "Main Aman", Callback = function(v) fishMode.Legit = v end })
 FishSection:Input({ Title = "Complete Delay", Placeholder = "0.42", Callback = function(v) blatantDelay = v end })
 
--- [ AUTOMATICALLY - LENGKAP + WEATHER ]
-local AutoShopSection = AutoTab:Section({ Title = "Shop Features", Icon = "shopping-cart" })
-local autoBuyWeather = false
-local selectedWeather = "Meteor"
+-- [ TAB AUTOMATICALLY - SHOP & WEATHER ]
+local AutoSection = AutoTab:Section({ Title = "Shop Features", Icon = "shopping-cart" })
 
-AutoShopSection:Toggle({ Title = "Auto Sell All", Callback = function(v) _G.AutoSell = v end })
-AutoShopSection:Toggle({ Title = "Auto Buy Weather", Callback = function(v) autoBuyWeather = v end })
-AutoShopSection:Dropdown({
+AutoSection:Toggle({ Title = "Auto Sell All", Content = "Jual Ikan Otomatis", Callback = function(v) autoSellEnabled = v end })
+AutoSection:Toggle({ Title = "Auto Buy Weather", Content = "Beli Cuaca Pilihan", Callback = function(v) autoBuyWeather = v end })
+AutoSection:Dropdown({
     Title = "Select Weather",
     Options = {"Meteor", "Rain", "Fog", "Windy", "Clear"},
+    Default = "Meteor",
     Callback = function(v) selectedWeather = v end
 })
 
--- [ TELEPORT - SEKARANG ADA MERCHANT ]
-local MerchantSection = TeleportTab:Section({ Title = "Merchant Utility", Icon = "store" })
+-- [ TAB TELEPORT - MERCHANT ]
+local TPSection = TeleportTab:Section({ Title = "Teleport Utility", Icon = "map" })
 
-MerchantSection:Button({
+TPSection:Button({
     Title = "Teleport to Merchant",
-    Content = "Langsung ke lokasi Merchant jika muncul",
+    Content = "Cari Travelling Merchant",
     Callback = function()
         local merchant = workspace:FindFirstChild("Merchant") or workspace:FindFirstChild("Travelling Merchant")
-        if merchant and merchant:FindFirstChild("HumanoidRootPart") then
-            game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = merchant.HumanoidRootPart.CFrame + Vector3.new(0, 5, 0)
-            WindUI:Notify({ Title = "Success", Content = "Teleported to Merchant!", Duration = 3 })
+        if merchant and merchant.PrimaryPart then
+            game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = merchant.PrimaryPart.CFrame + Vector3.new(0, 5, 0)
         else
-            WindUI:Notify({ Title = "Error", Content = "Merchant not found in this server!", Duration = 3 })
+            WindUI:Notify({ Title = "Not Found", Content = "Merchant belum muncul!", Duration = 3 })
         end
     end
 })
 
--- [ LOGIC EXECUTION ]
--- Logic Auto Fish
+-- [ LOGIC EXECUTION - ANTI MACET ]
 local ReplicateText = net:FindFirstChild("RE/ReplicateTextEffect")
 if ReplicateText then
     ReplicateText.OnClientEvent:Connect(function(data)
@@ -79,10 +82,11 @@ if ReplicateText then
     end)
 end
 
--- Logic Auto Sell & Weather
 task.spawn(function()
     while task.wait(5) do
-        if _G.AutoSell then pcall(function() net:FindFirstChild("RF/SellAllItems"):InvokeServer() end) end
+        if autoSellEnabled then pcall(function() net:FindFirstChild("RF/SellAllItems"):InvokeServer() end) end
         if autoBuyWeather then pcall(function() net:FindFirstChild("RF/PurchaseWeather"):InvokeServer(selectedWeather) end) end
     end
 end)
+
+WindUI:Notify({ Title = "Slinger Hub", Content = "V13 Loaded! Semua Fitur Aman.", Duration = 5 })
