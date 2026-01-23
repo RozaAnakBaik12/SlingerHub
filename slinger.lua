@@ -1,140 +1,84 @@
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 
-local Window = Rayfield:CreateWindow({
-   Name = "SLINGER HUB | FISH IT! VIP",
-   LoadingTitle = "Initializing Premium System...",
-   ConfigurationSaving = {
-      Enabled = false,
-      FolderName = "SlingerHub"
-   },
-   KeySystem = false,
-   Theme = "Ocean", -- Tema baru yang lebih bersih
+local Window = Fluent:CreateWindow({
+    Title = "SLINGER HUB | ULTRA DEBUG",
+    SubTitle = "Fixing Fishing Issues",
+    TabWidth = 160,
+    Size = UDim2.fromOffset(580, 460),
+    Acrylic = true,
+    Theme = "Dark",
+    MinimizeKey = Enum.KeyCode.LeftControl
 })
 
--- [ TABS ]
-local MainTab = Window:CreateTab("Main Menu", 4483362458)
-local FishTab = Window:CreateTab("Fishing Tool", 4483362458)
-local BlatantTab = Window:CreateTab("Blatant & TP", 4483362458)
+local Tabs = {
+    Main = Window:AddTab({ Title = "Main", Icon = "home" }),
+    Fishing = Window:AddTab({ Title = "Exclusive", Icon = "star" }),
+    Shop = Window:AddTab({ Title = "Shop", Icon = "shopping-cart" })
+}
 
--- [ MAIN MENU ]
-MainTab:CreateSection("Player Status")
-MainTab:CreateLabel("User: " .. game.Players.LocalPlayer.DisplayName)
+-- [ FIX FISHING LOGIC ]
+Tabs.Fishing:AddSection("Auto Farm Fix")
 
-MainTab:CreateButton({
-   Name = "Anti-AFK (Cegah Kick)",
-   Callback = function()
-       local vu = game:GetService("VirtualUser")
-       game:GetService("Players").LocalPlayer.Idled:Connect(function()
-           vu:Button2Down(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
-           wait(1)
-           vu:Button2Up(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
-       end)
-       Rayfield:Notify({Title = "System", Content = "Anti-AFK Aktif!", Duration = 3})
-   end,
-})
+local AutoCast = Tabs.Fishing:AddToggle("AutoCast", {Title = "Auto Cast (Force)", Default = false })
+local InstantPull = Tabs.Fishing:AddToggle("InstantPull", {Title = "Ultra Blatant V3 (Instant)", Default = false })
 
-MainTab:CreateSlider({
-   Name = "Speed Hack",
-   Range = {16, 250},
-   Increment = 1,
-   CurrentValue = 16,
-   Callback = function(Value)
-      game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = Value
-   end,
-})
+-- Logic Lempar (Auto Cast)
+AutoCast:OnChanged(function()
+    task.spawn(function()
+        while AutoCast.Value do
+            task.wait(1.5)
+            pcall(function()
+                local char = game.Players.LocalPlayer.Character
+                local tool = char:FindFirstChildOfClass("Tool") or game.Players.LocalPlayer.Backpack:FindFirstChildOfClass("Tool")
+                if tool then
+                    tool.Parent = char
+                    tool:Activate() -- Memaksa lempar
+                end
+            end)
+        end
+    end)
+end)
 
--- [ FISHING TOOL - LEGIT ]
-FishTab:CreateSection("Legit Fishing (Safe Mode)")
+-- Logic Tarik (Instant Fishing) - Diperbarui untuk mendeteksi tombol di video kamu
+InstantPull:OnChanged(function()
+    task.spawn(function()
+        while InstantPull.Value do
+            task.wait(0.01)
+            pcall(function()
+                local PlayerGui = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+                local VIM = game:GetService("VirtualInputManager")
+                
+                -- Mencari elemen UI yang muncul saat ikan terpancing (Klik Cepat!)
+                for _, v in pairs(PlayerGui:GetDescendants()) do
+                    -- Deteksi Berdasarkan Teks atau Posisi (Cek Video 42122.mp4)
+                    if v:IsA("TextButton") and v.Visible and (v.Text:lower():find("klik") or v.Name:lower():find("fish") or v.Text:find("!")) then
+                        -- Klik Brutal di lokasi tombol
+                        for i = 1, 10 do
+                            VIM:SendMouseButtonEvent(v.AbsolutePosition.X + (v.AbsoluteSize.X/2), v.AbsolutePosition.Y + (v.AbsoluteSize.Y/2) + 54, 0, true, game, 1)
+                            VIM:SendMouseButtonEvent(v.AbsolutePosition.X + (v.AbsoluteSize.X/2), v.AbsolutePosition.Y + (v.AbsoluteSize.Y/2) + 54, 0, false, game, 1)
+                        end
+                    end
+                end
+            end)
+        end
+    end)
+end)
 
-FishTab:CreateToggle({
-   Name = "Auto Cast (Normal)",
-   CurrentValue = false,
-   Callback = function(Value)
-      _G.AutoCast = Value
-      task.spawn(function()
-          while _G.AutoCast do
-              task.wait(1.5)
-              local tool = game.Players.LocalPlayer.Character:FindFirstChildOfClass("Tool")
-              if tool then tool:Activate() end
-          end
-      end)
-   end,
-})
+-- [ AUTO SELL FIX ]
+Tabs.Shop:AddSection("Shop")
+Tabs.Shop:AddToggle("AutoSell", {Title = "Auto Sell", Default = false }):OnChanged(function(Value)
+    task.spawn(function()
+        while Value do
+            task.wait(2)
+            -- Mencoba berbagai kemungkinan event sell
+            local events = game:GetService("ReplicatedStorage"):FindFirstChild("Events")
+            if events then
+                if events:FindFirstChild("SellAll") then events.SellAll:FireServer() end
+                if events:FindFirstChild("Sell") then events.Sell:FireServer() end
+            end
+        end
+    end)
+end)
 
-FishTab:CreateToggle({
-   Name = "Legit Pull (Tarik Santai)",
-   CurrentValue = false,
-   Callback = function(Value)
-      _G.LegitFish = Value
-      task.spawn(function()
-          while _G.LegitFish do
-              task.wait(0.4) -- Jeda manusiawi agar tidak dicurigai
-              pcall(function()
-                  local gui = game.Players.LocalPlayer.PlayerGui
-                  for _, v in pairs(gui:GetDescendants()) do
-                      if v:IsA("TextButton") and v.Visible and (v.Text:lower():find("klik") or v.Text:lower():find("pull")) then
-                          game:GetService("VirtualInputManager"):SendMouseButtonEvent(v.AbsolutePosition.X + (v.AbsoluteSize.X/2), v.AbsolutePosition.Y + (v.AbsoluteSize.Y/2) + 54, 0, true, game, 1)
-                          game:GetService("VirtualInputManager"):SendMouseButtonEvent(v.AbsolutePosition.X + (v.AbsoluteSize.X/2), v.AbsolutePosition.Y + (v.AbsoluteSize.Y/2) + 54, 0, false, game, 1)
-                      end
-                  end
-              end)
-          end
-      end)
-   end,
-})
-
--- [ BLATANT MODE ]
-BlatantTab:CreateSection("Instant Mode (Risk High)")
-
-BlatantTab:CreateToggle({
-   Name = "Instant Fishing (Fast Win)",
-   CurrentValue = false,
-   Callback = function(Value)
-      _G.InstantFish = Value
-      task.spawn(function()
-          while _G.InstantFish do
-              task.wait(0.01)
-              pcall(function()
-                  local gui = game.Players.LocalPlayer.PlayerGui
-                  for _, v in pairs(gui:GetDescendants()) do
-                      if v:IsA("TextButton") and v.Visible and (v.Text:lower():find("klik") or v.Text:lower():find("fish")) then
-                          -- Spam klik brutal untuk bypass minigame
-                          for i = 1, 15 do
-                             game:GetService("VirtualInputManager"):SendMouseButtonEvent(v.AbsolutePosition.X + (v.AbsoluteSize.X/2), v.AbsolutePosition.Y + (v.AbsoluteSize.Y/2) + 54, 0, true, game, 1)
-                             game:GetService("VirtualInputManager"):SendMouseButtonEvent(v.AbsolutePosition.X + (v.AbsoluteSize.X/2), v.AbsolutePosition.Y + (v.AbsoluteSize.Y/2) + 54, 0, false, game, 1)
-                          end
-                      end
-                  end
-              end)
-          end
-      end)
-   end,
-})
-
-BlatantTab:CreateSection("Teleport Control")
-
-local target = ""
-BlatantTab:CreateInput({
-   Name = "Username Target",
-   PlaceholderText = "Ketik nama...",
-   Callback = function(t) target = t end
-})
-
-BlatantTab:CreateToggle({
-   Name = "TP Loop to Player",
-   CurrentValue = false,
-   Callback = function(Value)
-      _G.TP = Value
-      task.spawn(function()
-          while _G.TP do
-              task.wait(0.1)
-              pcall(function()
-                  local p2 = game.Players:FindFirstChild(target)
-                  if p2 and p2.Character then
-                      game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = p2.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
-                  end
-              end)
-          end
-      end)
-   end,
-})
+Window:SelectTab(1)
+Fluent:Notify({ Title = "Slinger Hub", Content = "Fix Applied! Try Fishing now.", Duration = 5 })
