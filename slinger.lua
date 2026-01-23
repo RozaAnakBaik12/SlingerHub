@@ -1,83 +1,113 @@
-local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
 
-local Window = Fluent:CreateWindow({
-    Title = "SLINGER HUB | VIP EDITION",
-    SubTitle = "Categorized Features",
-    TabWidth = 160,
-    Size = UDim2.fromOffset(580, 460),
-    Theme = "Dark"
+-- [ SERVICES ]
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local net = ReplicatedStorage:WaitForChild("Packages"):WaitForChild("_Index"):WaitForChild("sleitnick_net@0.2.0"):WaitForChild("net")
+local finishRemote = net:WaitForChild("RE/FishingCompleted")
+
+-- [ STATE ]
+local fishMode = { Instant = false, Blatant = false, Legit = false }
+local blatantDelay = "0.42"
+
+-- [ WINDOW ]
+local Window = WindUI:CreateWindow({
+    Title = "Slinger Hub | VIP",
+    Icon = "fish",
+    Author = "Chloe X Style",
+    Folder = "SlingerHub",
+    Size = UDim2.fromOffset(600, 450),
+    Theme = "Indigo",
+    KeySystem = false
 })
 
-local Tabs = {
-    Main = Window:AddTab({ Title = "Main", Icon = "home" }),
-    Exclusive = Window:AddTab({ Title = "Exclusive", Icon = "star" }),
-    Shop = Window:AddTab({ Title = "Shop", Icon = "shopping-cart" }),
-    Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
-}
+-- [ TABS SESUAI CHLOE X ]
+local FishingTab = Window:Tab({ Title = "Fishing", Icon = "fish" })
+local AutoTab = Window:Tab({ Title = "Automatically", Icon = "refresh-cw" })
+local TradingTab = Window:Tab({ Title = "Trading", Icon = "users" })
+local MenuTab = Window:Tab({ Title = "Menu", Icon = "layout" })
+local QuestTab = Window:Tab({ Title = "Quest", Icon = "scroll" })
+local TeleportTab = Window:Tab({ Title = "Teleport", Icon = "map-pin" })
+local SettingsTab = Window:Tab({ Title = "Settings", Icon = "user-cog" })
 
--- [ TAB EXCLUSIVE - KATEGORI TERPISAH ]
-Tabs.Exclusive:AddSection("Fishing Modes")
+-- [ FISHING TAB - FITUR TERPISAH ]
+local FishSection = FishingTab:Section({ Title = "Fishing Features", Icon = "anchor" })
 
--- 1. MODE INSTANT (KILAT)
-local InstantToggle = Tabs.Exclusive:AddToggle("InstantFish", {Title = "Instant Fishing", Default = false })
+FishSection:Toggle({
+    Title = "Instant Fishing",
+    Content = "Mode Paling Cepat",
+    Callback = function(v) fishMode.Instant = v end
+})
 
--- 2. MODE BLATANT (BAR-BAR DENGAN SETTING)
-local BlatantToggle = Tabs.Exclusive:AddToggle("BlatantV3", {Title = "Ultra Blatant V3", Default = false })
+FishSection:Toggle({
+    Title = "Blatant Mode",
+    Content = "Gunakan Delay di Bawah",
+    Callback = function(v) fishMode.Blatant = v end
+})
 
--- 3. MODE LEGIT (AMAN / SEPERTI ASLI)
-local LegitToggle = Tabs.Exclusive:AddToggle("LegitMode", {Title = "Legit Mode (Human-Like)", Default = false })
+FishSection:Toggle({
+    Title = "Legit Mode",
+    Content = "Aman & Manusiawi",
+    Callback = function(v) fishMode.Legit = v end
+})
 
-Tabs.Exclusive:AddSection("Blatant Settings")
-local CompDelay = Tabs.Exclusive:AddInput("CompDelay", {Title = "Complete Delay", Default = "0.42"})
-local CanDelay = Tabs.Exclusive:AddInput("CanDelay", {Title = "Cancel Delay", Default = "0.3"})
-local RecDelay = Tabs.Exclusive:AddInput("RecDelay", {Title = "Re-Cast Delay", Default = "0.000"})
+FishSection:Input({
+    Title = "Blatant Delay",
+    Placeholder = "0.42",
+    Callback = function(v) blatantDelay = v end
+})
 
--- [ LOGIC PEMISAHAN FITUR ]
+-- [ LOGIC FISHING ]
 task.spawn(function()
     while task.wait() do
         pcall(function()
-            local net = game:GetService("ReplicatedStorage").Packages._Index["sleitnick_net@0.2.0"].net
-            
-            if InstantToggle.Value then
-                -- Mode Instant: Tanpa Jeda sama sekali
-                net["RE/FishingCompleted"]:FireServer()
+            if fishMode.Instant then
+                finishRemote:FireServer()
                 task.wait(0.01)
-            elseif BlatantToggle.Value then
-                -- Mode Blatant: Menggunakan Delay Input (0.42 sesuai gambar)
-                task.wait(tonumber(CompDelay.Value) or 0.42)
-                net["RE/FishingCompleted"]:FireServer()
-                task.wait(tonumber(RecDelay.Value) or 0)
-            elseif LegitToggle.Value then
-                -- Mode Legit: Delay acak agar tidak terkena ban
-                task.wait(math.random(1.5, 3.0))
-                net["RE/FishingCompleted"]:FireServer()
+            elseif fishMode.Blatant then
+                task.wait(tonumber(blatantDelay) or 0.42)
+                finishRemote:FireServer()
+            elseif fishMode.Legit then
+                task.wait(math.random(2, 4))
+                finishRemote:FireServer()
             end
         end)
     end
 end)
 
-Tabs.Exclusive:AddSection("Automation")
-local AutoCast = Tabs.Exclusive:AddToggle("AutoCast", {Title = "Auto Cast / Re-Cast", Default = false })
-task.spawn(function()
-    while task.wait(1.5) do
-        if AutoCast.Value then
-            local tool = game.Players.LocalPlayer.Character:FindFirstChildOfClass("Tool")
-            if tool then tool:Activate() end
-        end
+-- [ AUTOMATICALLY TAB ]
+local AutoSection = AutoTab:Section({ Title = "Shop Features", Icon = "shopping-cart" })
+AutoSection:Toggle({
+    Title = "Auto Sell All",
+    Content = "Otomatis jual setiap 60 detik",
+    Callback = function(v)
+        _G.AutoSell = v
+        task.spawn(function()
+            while _G.AutoSell do
+                net:WaitForChild("RF/SellAllItems"):InvokeServer()
+                task.wait(60)
+            end
+        end)
     end
-end)
+})
 
--- [ TETAP SERTAKAN FITUR PENTING LAINNYA ]
-Tabs.Shop:AddSection("Protection")
-Tabs.Shop:AddToggle("AutoFav", {Title = "Auto Favorite (Mythic+)", Default = true })
-Tabs.Shop:AddToggle("AutoSell", {Title = "Auto Sell All (60s)", Default = false })
+-- [ TELEPORT TAB ]
+local TPSection = TeleportTab:Section({ Title = "Islands", Icon = "map" })
+local islandCoords = {["Weather Machine"] = Vector3.new(-1471,-3,1929), ["Tropical Grove"] = Vector3.new(-2038,3,3650)}
 
-Tabs.Main:AddToggle("FPSBoost", {Title = "Unlock FPS", Default = true}):OnChanged(function(v)
-    if v then setfpscap(999) else setfpscap(60) end
-end)
+for name, pos in pairs(islandCoords) do
+    TPSection:Button({
+        Title = "Teleport " .. name,
+        Callback = function() 
+            game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(pos) 
+        end
+    })
+end
 
-local SaveManager = Fluent:AddSaveManager()
-SaveManager:SetLibrary(Fluent)
-SaveManager:SetFolder("SlingerHub/FishIt")
-SaveManager:BuildConfigSection(Tabs.Settings)
-SaveManager:LoadAutoloadConfig()
+-- [ SETTINGS ]
+local SetSection = SettingsTab:Section({ Title = "System", Icon = "cpu" })
+SetSection:Button({ Title = "Unlock FPS", Callback = function() setfpscap(999) end })
+SetSection:Button({ Title = "Boost FPS", Callback = function() 
+    for _, v in pairs(game:GetDescendants()) do
+        if v:IsA("BasePart") then v.Material = Enum.Material.SmoothPlastic end
+    end
+end})
