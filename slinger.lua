@@ -1,74 +1,76 @@
---[[ 
-    SLINGER HUB - FISCH VERSION
-    Pastikan menggunakan link Raw yang benar!
-]]
-
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+local Rayfield = loadstring(game:HttpGet('https://raw.githubusercontent.com/shlexware/Rayfield/main/source'))()
 
 local Window = Rayfield:CreateWindow({
-   Name = "Slinger Hub | Fisch",
-   LoadingTitle = "Mengaktifkan Slinger Hub...",
-   LoadingSubtitle = "by RozaAnakBaik12",
-   ConfigurationSaving = {
-      Enabled = true,
-      FolderName = "SlingerHub_Configs"
-   },
-   KeySystem = false
+   Name = "Slinger Hub | Fish It!",
+   LoadingTitle = "Memuat Fitur...",
+   ConfigurationSaving = { Enabled = true, FolderName = "Slinger_FishIt" }
 })
 
-local MainTab = Window:CreateTab("Utama", 4483362458)
+local MainTab = Window:CreateTab("Fishing AFK", 4483362458)
 
--- TOGGLE AUTO SHAKE
+-- FITUR AUTO CAST (OTOMATIS LEMPAR)
 MainTab:CreateToggle({
-   Name = "Auto Shake (Instant)",
+   Name = "Auto Cast (Lempar)",
    CurrentValue = false,
-   Flag = "AutoShake", 
    Callback = function(Value)
-      _G.AutoShake = Value
+      _G.AutoCast = Value
       task.spawn(function()
-          while _G.AutoShake do
-              task.wait(0.01) -- Agar tidak lag
-              local PlayerGui = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
-              local shakeUI = PlayerGui:FindFirstChild("shakeui", true)
-              if shakeUI and shakeUI.Enabled then
-                  local safe = shakeUI:FindFirstChild("safezone", true)
-                  if safe then
-                      local button = safe:FindFirstChild("button", true)
-                      if button then
-                          -- Menggunakan VirtualInputManager agar lebih akurat
-                          game:GetService("VirtualInputManager"):SendMouseButtonEvent(button.AbsolutePosition.X + (button.AbsoluteSize.X / 2), button.AbsolutePosition.Y + (button.AbsoluteSize.Y / 2), 0, true, game, 1)
-                          game:GetService("VirtualInputManager"):SendMouseButtonEvent(button.AbsolutePosition.X + (button.AbsoluteSize.X / 2), button.AbsolutePosition.Y + (button.AbsoluteSize.Y / 2), 0, false, game, 1)
-                      end
-                  end
+          while _G.AutoCast do
+              task.wait(1)
+              local char = game.Players.LocalPlayer.Character
+              local tool = char:FindFirstChildOfClass("Tool")
+              if tool and tool:FindFirstChild("Click") then -- Mencari event klik pada alat pancing
+                  tool.Click:FireServer()
               end
           end
       end)
    end,
 })
 
--- TOGGLE INSTANT REEL
+-- FITUR AUTO REEL / SHAKE (PENARIK IKAN)
 MainTab:CreateToggle({
-   Name = "Instant Reel",
+   Name = "Auto Reel (Otomatis Tarik)",
    CurrentValue = false,
-   Flag = "InstantReel",
    Callback = function(Value)
-      _G.InstantReel = Value
-      local PlayerGui = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
-      PlayerGui.ChildAdded:Connect(function(child)
-          if _G.InstantReel and child.Name == "reel" then
+      _G.AutoReel = Value
+      task.spawn(function()
+          while _G.AutoReel do
               task.wait(0.1)
-              local event = game:GetService("ReplicatedStorage"):FindFirstChild("events")
-              if event and event:FindFirstChild("reelfinished") then
-                  event.reelfinished:FireServer(100, true)
-              end
+              pcall(function()
+                  local PlayerGui = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+                  -- Di Fish It!, biasanya ada UI "Bar" atau "Button" yang muncul
+                  for _, v in pairs(PlayerGui:GetDescendants()) do
+                      if v:IsA("TextButton") and (v.Text:lower():find("pull") or v.Text:lower():find("click")) and v.Visible then
+                          -- Simulasi klik tombol tarik
+                          game:GetService("VirtualInputManager"):SendMouseButtonEvent(v.AbsolutePosition.X + (v.AbsoluteSize.X / 2), v.AbsolutePosition.Y + (v.AbsoluteSize.Y / 2) + 50, 0, true, game, 1)
+                          game:GetService("VirtualInputManager"):SendMouseButtonEvent(v.AbsolutePosition.X + (v.AbsoluteSize.X / 2), v.AbsolutePosition.Y + (v.AbsoluteSize.Y / 2) + 50, 0, false, game, 1)
+                      end
+                  end
+              end)
+          end
+      end)
+   end,
+})
+
+-- FITUR AUTO SELL (JUAL OTOMATIS)
+MainTab:CreateToggle({
+   Name = "Auto Sell (Jual Ikan)",
+   CurrentValue = false,
+   Callback = function(Value)
+      _G.AutoSell = Value
+      task.spawn(function()
+          while _G.AutoSell do
+              task.wait(5) -- Jual setiap 5 detik
+              -- Logika TP ke NPC Sell atau kirim Remote Event Sell
+              -- (Tergantung lokasi NPC di Fish It!)
+              game:GetService("ReplicatedStorage").Events.SellFish:FireServer() -- Contoh remote
           end
       end)
    end,
 })
 
 Rayfield:Notify({
-   Title = "Slinger Hub Aktif!",
-   Content = "Selamat menggunakan, Roza!",
-   Duration = 5,
-   Image = 4483362458,
+   Title = "Slinger Hub Loaded",
+   Content = "Khusus untuk Fish It! - Semoga beruntung!",
+   Duration = 5
 })
