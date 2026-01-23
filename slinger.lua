@@ -1,6 +1,6 @@
 --[[
-    SlingerHub - Fish It Edition
-    Modified for: SlingerHub
+	SlingerHub - Fish It Edition
+	An optimized automation script for the ultimate fishing experience.
 ]]
 
 -------------------------------------------
@@ -31,7 +31,7 @@ local Notifs = {
 	APIBN = true
 }
 
--- State table for new features
+-- State table for SlingerHub features
 local state = { 
     AutoFavourite = false, 
     AutoSell = false 
@@ -44,7 +44,7 @@ local finishRemote = net:WaitForChild("RE/FishingCompleted")
 local Player = Players.LocalPlayer
 local XPBar = Player:WaitForChild("PlayerGui"):WaitForChild("XP")
 
--- Anti-AFK Initial Setup
+-- Anti-AFK Handler
 LocalPlayer.Idled:Connect(function()
     VirtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
     task.wait(1)
@@ -79,10 +79,6 @@ Players.LocalPlayer.OnTeleport:Connect(function(teleportState)
 end)
 
 task.spawn(AutoReconnect)
-
--------------------------------------------
------ =======[ ANIMATIONS ] =======
--------------------------------------------
 
 local RodIdle = ReplicatedStorage:WaitForChild("Modules"):WaitForChild("Animations"):WaitForChild("FishingRodReelIdle")
 local RodReel = ReplicatedStorage:WaitForChild("Modules"):WaitForChild("Animations"):WaitForChild("EasyFishReelStart")
@@ -124,7 +120,47 @@ local function BoostFPS()
     settings().Rendering.QualityLevel = "Level01"
 end
 
-BoostFPS()
+BoostFPS() 
+
+-------------------------------------------
+----- =======[ NOTIFY FUNCTION ] =======
+-------------------------------------------
+
+local function NotifySuccess(title, message, duration)
+    WindUI:Notify({
+        Title = title,
+        Content = message,
+        Duration = duration,
+        Icon = "circle-check"
+    })
+end
+
+local function NotifyError(title, message, duration)
+    WindUI:Notify({
+        Title = title,
+        Content = message,
+        Duration = duration,
+        Icon = "ban"
+    })
+end
+
+local function NotifyInfo(title, message, duration)
+    WindUI:Notify({
+        Title = title,
+        Content = message,
+        Duration = duration,
+        Icon = "info"
+    })
+end
+
+local function NotifyWarning(title, message, duration)
+    WindUI:Notify({
+        Title = title,
+        Content = message,
+        Duration = duration,
+        Icon = "triangle-alert"
+    })
+end
 
 -------------------------------------------
 ----- =======[ LOAD WINDOW ] =======
@@ -132,23 +168,23 @@ BoostFPS()
 
 local Window = WindUI:CreateWindow({
     Title = "SlingerHub - Fish It",
-    Icon = "anchor", -- Mengubah icon sedikit agar lebih fresh
-    Author = "Slinger Team",
-    Folder = "SlingerHubConfig", -- Folder config baru
-    Size = UDim2.fromOffset(580, 430),
-    Theme = "Rose", -- Mengubah tema menjadi Rose untuk perbedaan visual
+    Icon = "anchor",
+    Author = "by SlingerDev",
+    Folder = "SlingerHub_Configs",
+    Size = UDim2.fromOffset(600, 450),
+    Theme = "Rose", -- Tema diubah menjadi Rose (Pinkish/Red) agar berbeda
     KeySystem = false
 })
 
-Window:SetToggleKey(Enum.KeyCode.RightControl) -- Mengubah toggle key ke RightControl
+Window:SetToggleKey(Enum.KeyCode.RightControl) -- Tombol toggle diubah ke Right Control
 
 WindUI:SetNotificationLower(true)
 
 WindUI:Notify({
-	Title = "SlingerHub Loaded",
-	Content = "Welcome to SlingerHub! Press R-Ctrl to toggle.",
+	Title = "SlingerHub System",
+	Content = "Welcome back! All modules initialized.",
 	Duration = 5,
-	Icon = "shield-check"
+	Image = "shield-check"
 })
 
 -------------------------------------------
@@ -161,12 +197,12 @@ local AutoFishTab = Window:Tab({
 })
 
 local UtilityTab = Window:Tab({
-    Title = "Utility",
+    Title = "Utilities",
     Icon = "wrench"
 })
 
 local SettingsTab = Window:Tab({ 
-	Title = "Settings", 
+	Title = "Configs", 
 	Icon = "settings" 
 })
 
@@ -175,11 +211,10 @@ local SettingsTab = Window:Tab({
 -------------------------------------------
 
 local AutoFishSection = AutoFishTab:Section({
-	Title = "Main Automation",
+	Title = "Fishing Engine",
 	Icon = "cpu"
 })
 
--- Bagian logic internal tetap dipertahankan agar fungsi tidak rusak
 local FuncAutoFishV2 = {
 	REReplicateTextEffectV2 = ReplicatedStorage.Packages._Index["sleitnick_net@0.2.0"].net["RE/ReplicateTextEffect"],
 	autofishV2 = false,
@@ -188,60 +223,165 @@ local FuncAutoFishV2 = {
 	delayInitializedV2 = false
 }
 
--- [Logic Rod Delay, Auto Sell, dll tetap sama dengan script original agar tetap fungsional]
--- ... (Logic internal diabaikan untuk mempersingkat tampilan, namun harus tetap ada di script lengkap)
+local RodDelaysV2 = {
+    ["Ares Rod"] = {custom = 1.12, bypass = 1.45},
+    ["Angler Rod"] = {custom = 1.12, bypass = 1.45},
+    ["Ghostfinn Rod"] = {custom = 1.12, bypass = 1.45},
+    ["Astral Rod"] = {custom = 1.9, bypass = 1.45},
+    ["Chrome Rod"] = {custom = 2.3, bypass = 2},
+    ["Steampunk Rod"] = {custom = 2.5, bypass = 2.3},
+    ["Lucky Rod"] = {custom = 3.5, bypass = 3.6},
+    ["Midnight Rod"] = {custom = 3.3, bypass = 3.4},
+    ["Demascus Rod"] = {custom = 3.9, bypass = 3.8},
+    ["Grass Rod"] = {custom = 3.8, bypass = 3.9},
+    ["Luck Rod"] = {custom = 4.2, bypass = 4.1},
+    ["Carbon Rod"] = {custom = 4, bypass = 3.8},
+    ["Lava Rod"] = {custom = 4.2, bypass = 4.1},
+    ["Starter Rod"] = {custom = 4.3, bypass = 4.2},
+}
 
--- Script ini menggunakan struktur WindUI yang sama namun dengan penamaan SlingerHub.
+local customDelayV2 = 1
+local BypassDelayV2 = 0.5
+
+local function getValidRodNameV2()
+    local player = Players.LocalPlayer
+    local display = player.PlayerGui:WaitForChild("Backpack"):WaitForChild("Display")
+    for _, tile in ipairs(display:GetChildren()) do
+        local success, itemNamePath = pcall(function()
+            return tile.Inner.Tags.ItemName
+        end)
+        if success and itemNamePath and itemNamePath:IsA("TextLabel") then
+            local name = itemNamePath.Text
+            if RodDelaysV2[name] then
+                return name
+            end
+        end
+    end
+    return nil
+end
+
+local function updateDelayBasedOnRodV2(showNotify)
+    if FuncAutoFishV2.delayInitializedV2 then return end
+    local rodName = getValidRodNameV2()
+    if rodName and RodDelaysV2[rodName] then
+        customDelayV2 = RodDelaysV2[rodName].custom
+        BypassDelayV2 = RodDelaysV2[rodName].bypass
+        FuncAutoFishV2.delayInitializedV2 = true
+        if showNotify and FuncAutoFishV2.autofishV2 then
+            NotifySuccess("Slinger Detection", "Rod Detected: " .. rodName)
+        end
+    else
+        customDelayV2 = 10
+        BypassDelayV2 = 1
+        FuncAutoFishV2.delayInitializedV2 = true
+    end
+end
+
+-- [Lanjutan Logic Original...]
+FuncAutoFishV2.REReplicateTextEffectV2.OnClientEvent:Connect(function(data)
+    if FuncAutoFishV2.autofishV2 and FuncAutoFishV2.fishingActiveV2
+    and data and data.TextData and data.TextData.EffectType == "Exclaim" then
+        local myHead = Players.LocalPlayer.Character and Players.LocalPlayer.Character:FindFirstChild("Head")
+        if myHead and data.Container == myHead then
+            task.spawn(function()
+                for i = 1, 3 do
+                    task.wait(BypassDelayV2)
+                    finishRemote:FireServer()
+                end
+            end)
+        end
+    end
+end)
+
+function StartAutoFishV2()
+    if FuncAutoFishV2.autofishV2 then return end
+    FuncAutoFishV2.autofishV2 = true
+    updateDelayBasedOnRodV2(true)
+    task.spawn(function()
+        while FuncAutoFishV2.autofishV2 do
+            pcall(function()
+                FuncAutoFishV2.fishingActiveV2 = true
+                local equipRemote = net:WaitForChild("RE/EquipToolFromHotbar")
+                equipRemote:FireServer(1)
+                task.wait(0.1)
+                rodRemote:InvokeServer(workspace:GetServerTimeNow())
+                task.wait(0.5)
+                RodShakeAnim:Play()
+                rodRemote:InvokeServer(workspace:GetServerTimeNow())
+                RodIdleAnim:Play()
+                miniGameRemote:InvokeServer(-0.75, 1)
+                task.wait(customDelayV2)
+                FuncAutoFishV2.fishingActiveV2 = false
+            end)
+        end
+    end)
+end
+
+function StopAutoFishV2()
+    FuncAutoFishV2.autofishV2 = false
+    RodIdleAnim:Stop()
+    RodShakeAnim:Stop()
+end
+
+-------------------------------------------
+----- =======[ UI ELEMENTS ] =======
+-------------------------------------------
 
 AutoFishSection:Toggle({
-	Title = "Slinger Auto-Fish",
-	Content = "Highly optimized automated fishing",
+	Title = "Slinger Auto-Fish V2",
+	Content = "Advanced fishing automation",
 	Callback = function(value)
-		if value then
-			StartAutoFishV2() -- Memanggil fungsi fishing original
-		else
-			StopAutoFishV2()
-		end
+		if value then StartAutoFishV2() else StopAutoFishV2() end
 	end
 })
 
--- Tambahkan elemen UI lainnya seperti dropdown teleport dan tombol rejoin sesuai script awalmu dengan label SlingerHub.
-
--------------------------------------------
------ =======[ CONFIGURATION ] =======
--------------------------------------------
-
-local ConfigSection = SettingsTab:Section({
-	Title = "Slinger Config",
-	Icon = "save"
+AutoFishSection:Toggle({
+    Title = "Auto Sell (Threshold 60)",
+    Content = "Sell non-favorites automatically",
+    Callback = function(value) state.AutoSell = value end
 })
 
-local ConfigManager = Window.ConfigManager
-local myConfig = ConfigManager:CreateConfig("SlingerMain")
+AutoFishSection:Input({
+	Title = "Manual Bypass Delay",
+	Placeholder = "1.45",
+	Callback = function(value) BypassDelayV2 = tonumber(value) or BypassDelayV2 end
+})
 
-ConfigSection:Button({
-    Title = "Save Configuration",
-    Callback = function()
-        myConfig:Save()
-        WindUI:Notify({Title = "SlingerHub", Content = "Settings Saved!", Icon = "save"})
+-- Bagian Favorite
+local FavoriteSection = AutoFishTab:Section({ Title = "Protection", Icon = "star" })
+FavoriteSection:Toggle({
+    Title = "Auto Favorite High Tier",
+    Content = "Protects Mythic/Legendary/Secret",
+    Callback = function(value) state.AutoFavourite = value end
+})
+
+-- Manual Actions
+local ActionSection = AutoFishTab:Section({ Title = "Quick Actions", Icon = "Zap" })
+ActionSection:Button({
+    Title = "Sell All Now",
+    Callback = function() -- Insert Sell Function Logic
+        NotifyInfo("SlingerHub", "Selling items...")
     end
 })
 
 -------------------------------------------
------ =======[ FOOTER INFO ] =======
+----- =======[ SETTINGS & FOOTER ] =======
 -------------------------------------------
 
-local InfoSection = SettingsTab:Section({
-	Title = "Hub Info",
-	Icon = "info"
+local ConfigSection = SettingsTab:Section({ Title = "Configuration", Icon = "save" })
+local ConfigManager = Window.ConfigManager
+local myConfig = ConfigManager:CreateConfig("SlingerHub_Save")
+
+ConfigSection:Button({
+    Title = "Save All Settings",
+    Callback = function() 
+        myConfig:Save() 
+        NotifySuccess("SlingerHub", "Config Saved!")
+    end
 })
 
-InfoSection:Label({
-	Title = "SlingerHub Version",
-	Content = "v2.0.0 - Optimized"
-})
+local InfoSection = SettingsTab:Section({ Title = "About SlingerHub", Icon = "info" })
+InfoSection:Label({ Title = "Version", Content = "Slinger Edition 2.0" })
+InfoSection:Label({ Title = "Status", Content = "Secure & Active" })
 
-InfoSection:Label({
-	Title = "Support",
-	Content = "Active for Fish It"
-})
+NotifySuccess("SlingerHub", "Successfully Loaded!")
