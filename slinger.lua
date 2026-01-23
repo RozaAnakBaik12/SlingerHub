@@ -1,135 +1,66 @@
 local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 
 local Window = Fluent:CreateWindow({
-    Title = "SLINGER HUB | ULTRA VIP V4",
-    SubTitle = "by Slinger Team x ZiaanHub",
+    Title = "SLINGER HUB | BLATANT V3",
+    SubTitle = "Premium Version",
     TabWidth = 160,
     Size = UDim2.fromOffset(580, 460),
     Acrylic = true,
     Theme = "Dark"
 })
 
--- [ GLOBALS & REMOTES ]
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local net = ReplicatedStorage:WaitForChild("Packages"):WaitForChild("_Index"):WaitForChild("sleitnick_net@0.2.0"):WaitForChild("net")
-local finishRemote = net:WaitForChild("RE/FishingCompleted")
-
--- [ TABS ]
 local Tabs = {
     Main = Window:AddTab({ Title = "Main", Icon = "home" }),
-    Fish = Window:AddTab({ Title = "Auto Fishing", Icon = "fish" }),
-    Shop = Window:AddTab({ Title = "Shop & Protect", Icon = "shopping-cart" }),
-    Teleport = Window:AddTab({ Title = "Teleport", Icon = "map-pin" }),
-    Misc = Window:AddTab({ Title = "Misc", Icon = "settings" })
+    Exclusive = Window:AddTab({ Title = "Exclusive", Icon = "star" }),
+    Shop = Window:AddTab({ Title = "Shop", Icon = "shopping-cart" }),
+    Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
 }
 
--- [ AUTO FISHING V2 SYSTEM ]
-Tabs.Fish:AddSection("V2 Advanced Automation")
+-- [ TAB EXCLUSIVE - BLATANT FEATURES ]
+Tabs.Exclusive:AddSection("Blatant Automation")
 
-local AutoFishV2 = Tabs.Fish:AddToggle("AutoFishV2", {Title = "Auto Fish V2 (Optimized)", Default = false })
-local PerfectCast = Tabs.Fish:AddToggle("PerfectCast", {Title = "Auto Perfect Cast", Default = true })
+local BlatantToggle = Tabs.Exclusive:AddToggle("BlatantFishing", {Title = "Ultra Blatant V3", Default = false })
+local AutoCast = Tabs.Exclusive:AddToggle("AutoCast", {Title = "Auto Cast / Re-Cast", Default = false })
 
-local bypassDelay = 1.45
-Tabs.Fish:AddInput("BypassInput", {
-    Title = "Bypass Delay",
-    Default = "1.45",
-    Callback = function(v) bypassDelay = tonumber(v) or 1.45 end
-})
-
--- Logic Auto Fish V2 (Gabungan ZiaanHub)
-AutoFishV2:OnChanged(function()
-    _G.Fishing = AutoFishV2.Value
+-- Logic Blatant Fishing (Sesuai Video 41931.mp4)
+BlatantToggle:OnChanged(function()
+    _G.Blatant = BlatantToggle.Value
     task.spawn(function()
-        while _G.Fishing do
+        while _G.Blatant do
+            task.wait(0.01)
             pcall(function()
-                local char = game.Players.LocalPlayer.Character
-                local equipRemote = net:WaitForChild("RE/EquipToolFromHotbar")
-                equipRemote:FireServer(1) -- Pastikan pancingan di slot 1
-                
-                task.wait(0.5)
-                local chargeRemote = net:WaitForChild("RF/ChargeFishingRod")
-                chargeRemote:InvokeServer(workspace:GetServerTimeNow())
-                
-                -- Sistem Lempar (Casting)
-                local x = PerfectCast.Value and -0.75 or (math.random(-1000,1000)/1000)
-                local y = PerfectCast.Value and 1 or (math.random(0,1000)/1000)
-                
-                net:WaitForChild("RF/RequestFishingMinigameStarted"):InvokeServer(x, y)
-                
-                -- Tunggu tarikan (Exclaim detection)
-                task.wait(bypassDelay) 
-                finishRemote:FireServer()
+                -- Mengirim sinyal "FishingCompleted" secara instan ke server
+                local net = game:GetService("ReplicatedStorage").Packages._Index["sleitnick_net@0.2.0"].net
+                net["RE/FishingCompleted"]:FireServer()
             end)
-            task.wait(0.5)
         end
     end)
 end)
 
--- [ SHOP & PROTECTION ]
+-- [ TAB MAIN - PERFORMANCE ]
+Tabs.Main:AddSection("Performance Boost")
+
+Tabs.Main:AddButton({
+    Title = "Unlock FPS",
+    Callback = function()
+        setfpscap(999) -- Membuka batas FPS
+        Fluent:Notify({Title = "System", Content = "FPS Unlocked!", Duration = 3})
+    end
+})
+
+-- [ TAB SHOP - PROTECTION ]
 Tabs.Shop:AddSection("Protection")
-local AutoFav = Tabs.Shop:AddToggle("AutoFav", {Title = "Auto Favorite (Mythic/Legend)", Default = false })
+Tabs.Shop:AddToggle("AutoFav", {Title = "Auto Favorite Secret/Mythic", Default = true })
 
--- Auto Favorite Logic
-task.spawn(function()
-    while task.wait(5) do
-        if AutoFav.Value then
-            pcall(function()
-                -- Logic untuk mencari ikan tier tinggi dan menandai favorit
-                -- (Sesuai script ZiaanHub)
-            end)
-        end
-    end
-end)
-
-Tabs.Shop:AddSection("Shop")
-Tabs.Shop:AddToggle("AutoSell", {Title = "Auto Sell All (Every 60s)", Default = false }):OnChanged(function(v)
-    _G.AutoSell = v
-    task.spawn(function()
-        while _G.AutoSell do
-            task.wait(60)
-            net:WaitForChild("RF/SellAllItems"):InvokeServer()
-        end
-    end)
-end)
-
--- [ TELEPORT SYSTEM ]
-Tabs.Teleport:AddSection("Quick Travel")
-local islandCoords = {
-    ["Weather Machine"] = Vector3.new(-1471, -3, 1929),
-    ["Esoteric Depths"] = Vector3.new(3157, -1303, 1439),
-    ["Tropical Grove"] = Vector3.new(-2038, 3, 3650),
-    ["Kohana Volcano"] = Vector3.new(-519, 24, 189)
-}
-
-local islandList = {}
-for n,_ in pairs(islandCoords) do table.insert(islandList, n) end
-
-Tabs.Teleport:AddDropdown("IslandTP", {
-    Title = "Teleport to Island",
-    Values = islandList,
-    Callback = function(v)
-        game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(islandCoords[v])
-    end
-})
-
--- [ MISC & FPS BOOST ]
-Tabs.Misc:AddSection("Performance")
-Tabs.Misc:AddButton({
-    Title = "Boost FPS (No Lag)",
+-- [ SETTINGS ]
+Tabs.Settings:AddButton({
+    Title = "Boost FPS (Remove Textures)",
     Callback = function()
         for _, v in pairs(game:GetDescendants()) do
-            if v:IsA("BasePart") then v.Material = "SmoothPlastic" elseif v:IsA("Decal") then v.Transparency = 1 end
+            if v:IsA("BasePart") then v.Material = Enum.Material.SmoothPlastic end
         end
-        Fluent:Notify({Title = "FPS Boost", Content = "Materials Simplified!"})
     end
 })
 
-Tabs.Misc:AddButton({
-    Title = "HDR Visuals",
-    Callback = function()
-        loadstring(game:HttpGet("https://pastebin.com/raw/avvr1gTW"))()
-    end
-})
-
-Window:SelectTab(1)
-Fluent:Notify({ Title = "Slinger Hub VIP", Content = "ZiaanHub Features Integrated!", Duration = 5 })
+Window:SelectTab(2) -- Langsung buka tab Exclusive
+Fluent:Notify({ Title = "Slinger Hub", Content = "Ultra Blatant V3 Loaded!", Duration = 5 })
