@@ -1,117 +1,79 @@
 --[[
-    SLINGERHUB V8.0 - THE ORIGINAL REVIVAL
-    - UI: WindUI (Biru)
-    - Fitur: Auto Fish, Blatant Rolling, Shop, Teleport
-    - Status: CLEAN (No Whitelist / No Self-Destruct)
+    ╔══════════════════════════════════════════╗
+    ║             SLINGER HUB v1.0             ║
+    ║        PREMIUM FISHING INTERFACE         ║
+    ║        OWNER: Lizz | Ozaaa            ║
+    ╚══════════════════════════════════════════╝
 ]]
 
-local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
+local Window = Library.CreateLib("SLINGER HUB - eyeGPT EDITION", "Midnight")
 
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-local VirtualUser = game:GetService("VirtualUser")
+-- FARMING TAB
+local Farm = Window:NewTab("Main Farming")
+local FarmSection = Farm:NewSection("Automated Fishing")
 
--- Ambil Network langsung (Bypass Rank Check)
-local net = nil
-pcall(function() 
-    net = ReplicatedStorage.Packages._Index["sleitnick_net@0.2.0"].net 
-end)
-
-local state = { 
-    AutoFish = false, 
-    BlatantLevel = "Safe", 
-    AutoSell = false,
-    SavedPos = nil
-}
-
--------------------------------------------
------ =======[ FISHING LOGIC ] =======
--------------------------------------------
-local function StartFishing()
-    task.spawn(function()
-        while state.AutoFish do
-            if not net then break end
+FarmSection:NewToggle("Slinger Auto-Fish", "Otomatis melempar dan menarik kail", function(state)
+    _G.SlingerFishing = state
+    spawn(function()
+        while _G.SlingerFishing do
             pcall(function()
-                net["RE/EquipToolFromHotbar"]:FireServer(1)
-                
-                if state.BlatantLevel == "Brutal" then
-                    for i = 1, 3 do
-                        task.spawn(function()
-                            net["RF/ChargeFishingRod"]:InvokeServer(tick())
-                            net["RF/RequestFishingMinigameStarted"]:InvokeServer(1.28, 1)
-                        end)
-                    end
-                    task.wait(0.7)
-                    for i = 1, 10 do net["RE/FishingCompleted"]:FireServer() end
-                elseif state.BlatantLevel == "Fast" then
-                    task.spawn(function()
-                        net["RF/ChargeFishingRod"]:InvokeServer(tick())
-                        net["RF/RequestFishingMinigameStarted"]:InvokeServer(1.28, 1)
-                    end)
-                    task.wait(0.85)
-                    for i = 1, 5 do net["RE/FishingCompleted"]:FireServer() end
-                else
-                    net["RF/ChargeFishingRod"]:InvokeServer(tick())
-                    net["RF/RequestFishingMinigameStarted"]:InvokeServer(1.2, 1)
-                    task.wait(2.2)
-                    net["RE/FishingCompleted"]:FireServer()
+                local char = game.Players.LocalPlayer.Character
+                local tool = char:FindFirstChildOfClass("Tool")
+                if tool then
+                    tool:Activate()
+                    -- Bypass logic for SlingerHub
+                    task.wait(0.1)
+                    game:GetService("ReplicatedStorage").Events.FishingEvent:FireServer("Cast")
                 end
             end)
-            task.wait(0.1)
+            task.wait(0.5)
         end
     end)
-end
+end)
 
--------------------------------------------
------ =======[ UI WINDOW ] =======
--------------------------------------------
-local Window = WindUI:CreateWindow({
-    Title = "SlingerHub V8.0",
-    Icon = "zap",
-    Author = "SlingerDev",
-    Folder = "SlingerHub_V8",
-    Size = UDim2.fromOffset(580, 420),
-    Theme = "Blue"
-})
+FarmSection:NewToggle("Instant Reel", "Menarik ikan seketika tanpa minigame", function(state)
+    _G.InstantReel = state
+    spawn(function()
+        while _G.InstantReel do
+            game:GetService("ReplicatedStorage").Events.FishingEvent:FireServer("ReelIn", true)
+            task.wait(0.05)
+        end
+    end)
+end)
 
-local MainTab = Window:Tab({ Title = "Main", Icon = "zap" })
-local ShopTab = Window:Tab({ Title = "Shop", Icon = "shopping-bag" })
-local TeleportTab = Window:Tab({ Title = "Teleport", Icon = "map" })
+-- TELEPORT TAB
+local Teleport = Window:NewTab("Locations")
+local TPSection = Teleport:NewSection("Instant Warp")
 
--- TAB MAIN
-local MainSection = MainTab:Section({ Title = "Fishing Engine" })
-MainSection:Toggle({ 
-    Title = "Auto Fish", 
-    Callback = function(v) state.AutoFish = v if v then StartFishing() end end 
-})
-MainSection:Dropdown({ 
-    Title = "Blatant Rolling", 
-    Values = {"Safe", "Fast", "Brutal"}, 
-    Callback = function(v) state.BlatantLevel = v end 
-})
+TPSection:NewButton("Sell Area", "Teleport ke tempat jual ikan", function()
+    game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(100, 20, 200) -- Ganti koordinat sesuai map
+end)
 
--- TAB SHOP
-local ShopSection = ShopTab:Section({ Title = "Economy" })
-ShopSection:Toggle({ 
-    Title = "Auto Sell All", 
-    Callback = function(v) 
-        state.AutoSell = v 
-        task.spawn(function() while state.AutoSell do pcall(function() net["RF/SellAllItems"]:InvokeServer() end) task.wait(60) end end)
-    end 
-})
+TPSection:NewButton("Deep Sea", "Area ikan langka", function()
+    game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-500, 10, 1500)
+end)
 
--- TAB TELEPORT
-local PosSection = TeleportTab:Section({ Title = "Position Manager" })
-PosSection:Button({ Title = "Save Position", Callback = function() state.SavedPos = LocalPlayer.Character.HumanoidRootPart.CFrame end })
-PosSection:Button({ Title = "TP to Saved", Callback = function() if state.SavedPos then LocalPlayer.Character.HumanoidRootPart.CFrame = state.SavedPos end end })
-PosSection:Button({ Title = "Reset Position", Callback = function() LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(45, 252, 2987) end })
+-- PLAYER TAB
+local Player = Window:NewTab("Player")
+local PSection = Player:NewSection("Ability")
 
-local IslandSection = TeleportTab:Section({ Title = "Island Rolling" })
-local locs = {["Spawn"] = CFrame.new(45, 252, 2987), ["Sisyphus"] = CFrame.new(-3728, -135, -1012), ["Esoteric"] = CFrame.new(3248, -1301, 1403)}
-local names = {}; for n,_ in pairs(locs) do table.insert(names, n) end
-IslandSection:Dropdown({ Title = "Select Island", Values = names, Callback = function(s) LocalPlayer.Character.HumanoidRootPart.CFrame = locs[s] end })
+PSection:NewSlider("Movement Speed", "Atur kecepatan lari", 250, 16, function(v)
+    game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = v
+end)
 
--- Anti-AFK
-LocalPlayer.Idled:Connect(function() VirtualUser:CaptureController() VirtualUser:ClickButton2(Vector2.new()) end)
-WindUI:Notify({Title = "SlingerHub V8.0", Content = "Semua Rombakan Selesai!"})
+PSection:NewButton("Anti-AFK", "Cegah diskoneksi saat farming", function()
+    local vu = game:GetService("VirtualUser")
+    game.Players.LocalPlayer.Idled:Connect(function()
+        vu:Button2Down(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
+        wait(1)
+        vu:Button2Up(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
+    end)
+end)
+
+-- SYSTEM TAB
+local Sys = Window:NewTab("System")
+local SSection = Sys:NewSection("Owner: argaaa")
+SSection:NewButton("Destroy GUI", "Menghapus menu SlingerHub", function()
+    Library:DestroyGui()
+end)
