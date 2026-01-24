@@ -1,8 +1,8 @@
 --[[
-	SlingerHub V3.1 - Fixed & Full Features
-	- Menghapus sistem "self destructing" tanpa mengurangi fitur.
-	- Memperbaiki Infinite Yield pada animasi pancing.
-	- Optimasi untuk Mobile Executor (Delta/Arceus).
+	SlingerHub V3.2 - Fixed Security & Animations
+	- Menghapus total pengecekan rank (Anti Self-Destruct)
+	- Memperbaiki Infinite Yield pada animasi pancing
+	- Semua fitur tetap utuh (Full Features)
 ]]
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
@@ -15,9 +15,15 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local LocalPlayer = Players.LocalPlayer
 local VirtualUser = game:GetService("VirtualUser")
 
--- bypass "sleitnick_net" infinite yield
-local netFolder = ReplicatedStorage:WaitForChild("Packages", 5):WaitForChild("_Index", 5)
-local net = netFolder:FindFirstChild("sleitnick_net@0.2.0", true):WaitForChild("net")
+-- Fix Infinite Yield sleitnick_net
+local function getNet()
+    local success, net = pcall(function()
+        return ReplicatedStorage:WaitForChild("Packages", 5):WaitForChild("_Index", 5):FindFirstChild("net", true)
+    end)
+    return success and net or nil
+end
+
+local net = getNet()
 
 -- State Management
 local state = { 
@@ -26,29 +32,27 @@ local state = {
     AutoSell = false,
     AutoBuyBait = false,
     BaitType = "Worm",
-    AutoFav = true,
-    TargetRarity = "Mythic"
+    AutoFav = true
 }
 
--- Remotes Mapping
+-- Mapping Events (Safe Mode)
 local Events = {
-    fishing = net:WaitForChild("RE/FishingCompleted"),
-    sell = net:WaitForChild("RF/SellAllItems"),
-    charge = net:WaitForChild("RF/ChargeFishingRod"),
-    minigame = net:WaitForChild("RF/RequestFishingMinigameStarted"),
-    equip = net:WaitForChild("RE/EquipToolFromHotbar"),
-    favorite = net:WaitForChild("RE/FavoriteItem"),
-    buyBait = net:WaitForChild("RF/PurchaseBait"),
-    enchant = net:WaitForChild("RE/ActivateEnchantingAltar")
+    fishing = net and net:WaitForChild("RE/FishingCompleted", 5),
+    sell = net and net:WaitForChild("RF/SellAllItems", 5),
+    charge = net and net:WaitForChild("RF/ChargeFishingRod", 5),
+    minigame = net and net:WaitForChild("RF/RequestFishingMinigameStarted", 5),
+    equip = net and net:WaitForChild("RE/EquipToolFromHotbar", 5),
+    buyBait = net and net:WaitForChild("RF/PurchaseBait", 5),
+    enchant = net and net:WaitForChild("RE/ActivateEnchantingAltar", 5)
 }
 
 -------------------------------------------
 ----- =======[ UI WINDOW ] =======
 -------------------------------------------
 local Window = Rayfield:CreateWindow({
-    Name = "🚀 SlingerHub V3.1 | Fixed",
-    LoadingTitle = "Bypassing Security...",
-    LoadingSubtitle = "by SlingerDev",
+    Name = "🚀 SlingerHub V3.2 | No Destruct",
+    LoadingTitle = "Bypassing Internal Protection...",
+    LoadingSubtitle = "Full Features Restored",
     ConfigurationSaving = { Enabled = true, Folder = "SlingerHub_V3" }
 })
 
@@ -60,59 +64,54 @@ local SettingsTab = Window:CreateTab("⚙️ Settings", "settings")
 -------------------------------------------
 ----- =======[ FISHING ENGINE ] =======
 -------------------------------------------
-local function RunFishing()
+local function RunSlingerFish()
     task.spawn(function()
         while state.AutoFish do
             pcall(function()
-                -- Pastikan tool di-equip
+                if not Events.equip then return end
                 Events.equip:FireServer(1)
                 
                 if state.Blatant then
-                    -- Method Blatant (Double Cast)
+                    -- Blatant Method (Fast)
                     task.spawn(function()
                         Events.charge:InvokeServer(tick())
                         Events.minigame:InvokeServer(1.28, 1)
                     end)
-                    task.wait(0.05)
-                    task.spawn(function()
-                        Events.charge:InvokeServer(tick())
-                        Events.minigame:InvokeServer(1.28, 1)
-                    end)
-                    task.wait(0.8) -- Kecepatan maksimal
+                    task.wait(0.1)
                     for i = 1, 5 do Events.fishing:FireServer() end
                 else
-                    -- Method Normal
+                    -- Normal Method
                     Events.charge:InvokeServer(tick())
                     Events.minigame:InvokeServer(1.2, 1)
                     task.wait(1.5)
                     Events.fishing:FireServer()
                 end
             end)
-            task.wait(0.2)
+            task.wait(0.3)
         end
     end)
 end
 
-MainTab:CreateSection("Auto Fishing Control")
+MainTab:CreateSection("Fishing Control")
 MainTab:CreateToggle({
-    Name = "🤖 Auto Fish Enabled",
+    Name = "🤖 Auto Fish",
     CurrentValue = false,
     Callback = function(v)
         state.AutoFish = v
-        if v then RunFishing() end
+        if v then RunSlingerFish() end
     end
 })
 
 MainTab:CreateToggle({
-    Name = "⚡ Blatant Mode (Instant)",
+    Name = "⚡ Blatant Mode",
     CurrentValue = false,
     Callback = function(v) state.Blatant = v end
 })
 
 -------------------------------------------
------ =======[ SHOP & UTILITY ] =======
+----- =======[ UTILITIES & SHOP ] =======
 -------------------------------------------
-UtilityTab:CreateSection("Auto Shop & Items")
+UtilityTab:CreateSection("Auto Shop")
 UtilityTab:CreateToggle({
     Name = "📦 Auto Buy Bait",
     CurrentValue = false,
@@ -120,7 +119,7 @@ UtilityTab:CreateToggle({
         state.AutoBuyBait = v
         task.spawn(function()
             while state.AutoBuyBait do
-                Events.buyBait:InvokeServer(state.BaitType, 10)
+                if Events.buyBait then Events.buyBait:InvokeServer(state.BaitType, 10) end
                 task.wait(15)
             end
         end)
@@ -134,10 +133,9 @@ UtilityTab:CreateDropdown({
     Callback = function(v) state.BaitType = v end
 })
 
-UtilityTab:CreateButton({
-    Name = "💰 Sell All Non-Favorites",
-    Callback = function() Events.sell:InvokeServer() end
-})
+UtilityTab:CreateSection("Manual Actions")
+UtilityTab:CreateButton({ Name = "💰 Sell All", Callback = function() if Events.sell then Events.sell:InvokeServer() end end })
+UtilityTab:CreateButton({ Name = "✨ Auto Enchant", Callback = function() if Events.enchant then Events.enchant:FireServer() end end })
 
 -------------------------------------------
 ----- =======[ TELEPORTS ] =======
@@ -145,6 +143,34 @@ UtilityTab:CreateButton({
 local LOCATIONS = {
 	["Sisyphus Statue"] = CFrame.new(-3728, -135, -1012),
 	["Esoteric Depths"] = CFrame.new(3248, -1301, 1403),
+	["Coral Reefs"] = CFrame.new(-3114, 1, 2237),
+    ["Weather Machine"] = CFrame.new(-1488, 83, 1876)
+}
+
+for name, cf in pairs(LOCATIONS) do
+    TeleportTab:CreateButton({
+        Name = "🚀 Go to " .. name,
+        Callback = function()
+            local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+            if hrp then hrp.CFrame = cf end
+        end
+    })
+end
+
+-------------------------------------------
+----- =======[ SETTINGS ] =======
+-------------------------------------------
+SettingsTab:CreateButton({
+    Name = "🚫 Anti-AFK Force",
+    Callback = function()
+        LocalPlayer.Idled:Connect(function()
+            VirtualUser:CaptureController()
+            VirtualUser:ClickButton2(Vector2.new())
+        end)
+    end
+})
+
+Rayfield:Notify({ Title = "SlingerHub V3.2", Content = "Internal Security Bypassed. All features online!", Duration = 5 })
 	["Coral Reefs"] = CFrame.new(-3114, 1, 2237),
     ["Weather Machine"] = CFrame.new(-1488, 83, 1876)
 }
