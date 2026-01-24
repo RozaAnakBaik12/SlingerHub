@@ -1,108 +1,161 @@
 --[[
-	SlingerHub - Fixed Edition
-	No Rank Check | No Self-Destruct | Optimized for Delta
+	SlingerHub - Full Version (Anti Self-Destruct)
+	Optimized for Delta & Mobile Executors
 ]]
 
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
 
--- Membersihkan koneksi lama agar tidak tumpang tindih
-for i,v in next, getconnections(game:GetService("Players").LocalPlayer.Idled) do
-    v:Disable()
-end
-
 -------------------------------------------
------ =======[ GLOBAL VARIABLES ] =======
+----- =======[ INITIALIZATION ] =======
 -------------------------------------------
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
+local VirtualUser = game:GetService("VirtualUser")
 local net = ReplicatedStorage:WaitForChild("Packages"):WaitForChild("_Index")["sleitnick_net@0.2.0"].net
 
--- State
-local state = { AutoFish = false, AutoSell = false, AutoFav = false }
+-- State Management
+local state = { 
+    AutoFish = false, 
+    AutoSell = false, 
+    AutoFav = false,
+    PerfectCast = true
+}
 
--- Remotes (Tanpa pcall berlebihan agar tidak stuck)
+-- Remotes
 local rodRemote = net:WaitForChild("RF/ChargeFishingRod")
 local miniGameRemote = net:WaitForChild("RF/RequestFishingMinigameStarted")
 local finishRemote = net:WaitForChild("RE/FishingCompleted")
+local sellRemote = net:WaitForChild("RF/SellAllItems")
 
 -------------------------------------------
------ =======[ UI SETUP ] =======
+----- =======[ UI WINDOW ] =======
 -------------------------------------------
 local Window = WindUI:CreateWindow({
-    Title = "SlingerHub - Fixed",
+    Title = "SlingerHub - Fish It",
     Icon = "anchor",
     Author = "SlingerDev",
-    Folder = "Slinger_Fixed",
-    Size = UDim2.fromOffset(580, 420),
+    Folder = "SlingerHub_Fixed",
+    Size = UDim2.fromOffset(600, 450),
     Theme = "Rose",
     KeySystem = false
 })
 
-local MainTab = Window:Tab({ Title = "Automation", Icon = "fish" })
-local Section = MainTab:Section({ Title = "Fishing Bot", Icon = "cpu" })
+Window:SetToggleKey(Enum.KeyCode.RightControl)
+
+local AutoFishTab = Window:Tab({ Title = "Fishing", Icon = "fish" })
+local UtilityTab = Window:Tab({ Title = "Utility", Icon = "wrench" })
+local SettingsTab = Window:Tab({ Title = "Settings", Icon = "settings" })
 
 -------------------------------------------
------ =======[ CORE FUNCTION ] =======
+----- =======[ AUTO FISHING LOGIC ] =======
 -------------------------------------------
+local FishSection = AutoFishTab:Section({ Title = "Automation", Icon = "cpu" })
 
-local function StartSlingerFish()
+-- Auto Fish Function
+local function RunSlingerFish()
     task.spawn(function()
         while state.AutoFish do
             pcall(function()
-                -- Equip Rod
-                local equip = net:WaitForChild("RE/EquipToolFromHotbar")
-                equip:FireServer(1)
+                local char = LocalPlayer.Character
+                if not char then return end
+                
+                -- Equip Rod (Slot 1)
+                net:WaitForChild("RE/EquipToolFromHotbar"):FireServer(1)
                 task.wait(0.3)
 
-                -- Casting
+                -- Cast Rod
                 rodRemote:InvokeServer(workspace:GetServerTimeNow())
-                task.wait(0.2)
+                task.wait(0.4)
                 
-                -- Simulate Casting Power
+                -- Start Minigame
                 miniGameRemote:InvokeServer(-0.75, 1)
-                
-                -- Waiting for fish (Customizable delay)
-                task.wait(3.5) 
+                task.wait(2) -- Delay cooldown
             end)
             if not state.AutoFish then break end
-            task.wait(0.1)
+            task.wait(0.5)
         end
     end)
 end
 
--- Hook untuk menangkap ikan (Exclaim detection)
-local textEffect = net:WaitForChild("RE/ReplicateTextEffect")
-textEffect.OnClientEvent:Connect(function(data)
+-- Catch Detection (Exclaim)
+net:WaitForChild("RE/ReplicateTextEffect").OnClientEvent:Connect(function(data)
     if state.AutoFish and data.TextData and data.TextData.EffectType == "Exclaim" then
         if data.Container == (LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Head")) then
-            task.wait(0.5) -- Delay bypass aman
+            task.wait(0.4) -- Bypass delay
             finishRemote:FireServer()
         end
     end
 end)
 
--------------------------------------------
------ =======[ TOGGLES ] =======
--------------------------------------------
+FishSection:Toggle({
+    Title = "Enable Auto Fish",
+    Callback = function(v)
+        state.AutoFish = v
+        if v then RunSlingerFish() end
+    end
+})
 
-Section:Toggle({
-    Title = "Auto Fish V2",
-    Content = "Start fishing without rank check",
-    Callback = function(value)
-        state.AutoFish = value
-        if value then 
-            StartSlingerFish()
-            WindUI:Notify({Title = "SlingerHub", Content = "Bot Started!", Icon = "circle-check"})
+FishSection:Toggle({
+    Title = "Auto Sell All",
+    Content = "Jual ikan otomatis setiap 60 detik",
+    Callback = function(v)
+        state.AutoSell = v
+        task.spawn(function()
+            while state.AutoSell do
+                sellRemote:InvokeServer()
+                task.wait(60)
+            end
+        end)
+    end
+})
+
+-------------------------------------------
+----- =======[ UTILITY (TELEPORT) ] =======
+-------------------------------------------
+local TPSection = UtilityTab:Section({ Title = "Teleports", Icon = "map" })
+
+local islandCoords = {
+	["Esoteric Depths"] = Vector3.new(3157, -1303, 1439),
+	["Tropical Grove"] = Vector3.new(-2038, 3, 3650),
+	["Kohana Volcano"] = Vector3.new(-519, 24, 189),
+    ["Weather Machine"] = Vector3.new(-1471, -3, 1929)
+}
+
+local islandNames = {}
+for name, _ in pairs(islandCoords) do table.insert(islandNames, name) end
+
+TPSection:Dropdown({
+    Title = "Select Island",
+    Values = islandNames,
+    Callback = function(selected)
+        local hrp = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            hrp.CFrame = CFrame.new(islandCoords[selected] + Vector3.new(0, 5, 0))
         end
     end
 })
 
-Section:Button({
-    Title = "Force Sell All",
+-------------------------------------------
+----- =======[ SETTINGS ] =======
+-------------------------------------------
+local SetSection = SettingsTab:Section({ Title = "Misc", Icon = "user" })
+
+SetSection:Button({
+    Title = "Anti-AFK (Force Activate)",
     Callback = function()
-        net:WaitForChild("RF/SellAllItems"):InvokeServer()
+        LocalPlayer.Idled:Connect(function()
+            VirtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+            task.wait(0.5)
+            VirtualUser:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+        end)
+        WindUI:Notify({Title = "SlingerHub", Content = "Anti-AFK Active!"})
     end
 })
 
-WindUI:Notify({Title = "SlingerHub", Content = "Fixed Script Loaded!", Duration = 5})
+SetSection:Button({
+    Title = "Rejoin Server",
+    Callback = function() game:GetService("TeleportService"):Teleport(game.PlaceId, LocalPlayer) end
+})
+
+WindUI:Notify({Title = "SlingerHub", Content = "All Features Loaded Successfully!"})
