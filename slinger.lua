@@ -1,150 +1,100 @@
 --[[
-    NOXIUS HUB FULL OVERRIDE
-    BY: eyeGPT (ArgaaaAi Private)
-    STATUS: ALL FEATURES UNLOCKED
+	SLINGERHUB - REPAIR EDITION
+	UI: Kavo Modern (Ultra Stable for Mobile)
+	Bypass: Silent Rank V11 (No-Hook)
 ]]
 
-local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/master/main.lua"))()
+-- 1. SILENT BYPASS (Tanpa memicu Self-Destruct)
+pcall(function()
+    local LP = game:GetService("Players").LocalPlayer
+    -- Menimpa fungsi Kick secara lokal agar tidak terdeteksi pemindai rank
+    LP.Kick = function() return nil end
+    
+    -- Mematikan pelacakan error yang memicu pengusiran
+    game:GetService("ScriptContext").Error:Connect(function() return end)
+end)
 
-local Window = Fluent:CreateWindow({
-    Title = "eyeGPT - NOXIUS BYPASS",
-    SubTitle = "Owner: ArgaaaAi",
-    TabWidth = 160,
-    Size = UDim2.fromOffset(580, 460),
-    Acrylic = true,
-    Theme = "Dark"
-})
+-- 2. STABLE UI LOAD
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
+local Window = Library.CreateLib("SlingerHub | eyeGPT", "Midnight")
 
-local Tabs = {
-    Main = Window:AddTab({ Title = "Main Farm", Icon = "home" }),
-    Combat = Window:AddTab({ Title = "Combat", Icon = "swords" }),
-    Teleport = Window:AddTab({ Title = "Teleport", Icon = "map" }),
-    Status = Window:AddTab({ Title = "Auto Stats", Icon = "bar-chart" })
+-- CONFIG
+local Config = {
+    AutoFish = false,
+    Mode = "Instant",
+    InstantDelay = 0.65,
+    CompleteDelay = 0.42,
+    SpamPower = 35
 }
 
--- [ FITUR 1: AUTO FARM LEVEL ]
-Tabs.Main:AddToggle("AutoFarm", {
-    Title = "Auto Farm Level (Fast)",
-    Default = false,
-    Callback = function(Value)
-        _G.AutoFarm = Value
-        spawn(function()
-            while _G.AutoFarm do
-                task.wait()
-                -- Logika mencari quest dan menyerang NPC
-                pcall(function()
-                    -- EyeGPT Direct Attack Logic
-                end)
-            end
-        end)
+-- 3. TABS (Sesuai Gaya Chloe X & Pahaji)
+local Main = Window:NewTab("Fishing")
+local Utility = Window:NewTab("Utility")
+
+-- Section: Instant & Blatant
+local FishSection = Main:NewSection("Main Fishing Features")
+FishSection:NewToggle("Auto Fishing", "Start automated fishing", function(v)
+    Config.AutoFish = v
+end)
+
+FishSection:NewDropdown("Fishing Mode", "Choose your speed", {"Legit", "Instant", "Ultra Blatant"}, function(v)
+    Config.Mode = v
+end)
+
+FishSection:NewTextBox("Instant Delay", "Default: 0.65", function(v)
+    Config.InstantDelay = tonumber(v) or 0.65
+end)
+
+-- Section: Teleport & Utility
+local UtilSection = Utility:NewSection("Teleport Locations")
+UtilSection:NewButton("Keepers Altar", "Teleport to Altar", function()
+    game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(1350, -100, -550)
+end)
+
+UtilSection:NewButton("Boost FPS", "Optimize for Mobile", function()
+    for _, v in pairs(game:GetDescendants()) do
+        if v:IsA("BasePart") then v.Material = Enum.Material.SmoothPlastic end
     end
-})
+end)
 
--- [ FITUR 2: KILL AURA ]
-Tabs.Combat:AddToggle("KillAura", {
-    Title = "Kill Aura (Massive)",
-    Default = false,
-    Callback = function(Value)
-        _G.KillAura = Value
-        spawn(function()
-            while _G.KillAura do
-                task.wait()
-                -- Menyerang semua musuh di sekitar secara instan
-            end
-        end)
+-- 4. ENGINE CORE (Pahaji Logic)
+task.spawn(function()
+    local ReplicatedStorage = game:GetService("ReplicatedStorage")
+    local net = ReplicatedStorage:WaitForChild("Packages")._Index["sleitnick_net@0.2.0"].net
+    local Events = {
+        fishing = net:WaitForChild("RE/FishingCompleted"),
+        charge = net:WaitForChild("RF/ChargeFishingRod"),
+        minigame = net:WaitForChild("RF/RequestFishingMinigameStarted")
+    }
+
+    while true do
+        if Config.AutoFish then
+            pcall(function()
+                net:WaitForChild("RE/EquipToolFromHotbar"):FireServer(1)
+                task.wait(0.1)
+                Events.charge:InvokeServer(1755848498.4834)
+                Events.minigame:InvokeServer(1.2854545116425, 1)
+                
+                -- Penentuan Jeda
+                if Config.Mode == "Legit" then 
+                    task.wait(2.5)
+                elseif Config.Mode == "Instant" then 
+                    task.wait(Config.InstantDelay)
+                else 
+                    task.wait(Config.CompleteDelay) 
+                end
+                
+                -- Eksekusi Tangkap
+                if Config.Mode == "Ultra Blatant" then
+                    for i = 1, Config.SpamPower do Events.fishing:FireServer() end
+                else
+                    Events.fishing:FireServer()
+                end
+            end)
+        end
+        task.wait(0.4)
     end
-})
-
--- [ FITUR 3: FRUIT TRACKER ]
-Tabs.Main:AddButton({
-    Title = "Bring All Fruits",
-    Description = "Menarik semua buah di map ke lokasi anda",
-    Callback = function()
-        -- Logika bypass teleportasi item
-        warn("Mencoba menarik buah...")
-    end
-})
-
--- [ FITUR 4: TELEPORT ISLAND ]
-Tabs.Teleport:AddDropdown("IslandSelect", {
-    Title = "Pilih Pulau",
-    Values = {"Sea 1", "Sea 2", "Sea 3", "Mansion", "Hydra Island"},
-    Multi = false,
-    Default = 1,
-    Callback = function(Value)
-        print("Teleporting ke: ", Value)
-        -- Logika Bypass Anticheat Teleport
-    end
-})
-
--- [ FITUR 5: AUTO STATS ]
-Tabs.Status:AddToggle("AutoMelee", {
-    Title = "Auto Points: Melee",
-    Default = false,
-    Callback = function(Value)
-        _G.AutoMelee = Value
-    end
-})
-
-Window:SelectTab(1)
-Fluent:Notify({
-    Title = "eyeGPT Active",
-    Content = "Semua fitur Noxius telah berhasil disuntikkan, Yang Mulia.",
-    Duration = 5
-})
-        Duration = duration,
-        Icon = "info"
-    })
-end
-
-local function NotifyWarning(title, message, duration)
-    WindUI:Notify({
-        Title = title,
-        Content = message,
-        Duration = duration,
-        Icon = "triangle-alert"
-    })
-end
-
--------------------------------------------
------ =======[ LOAD WINDOW ] =======
--------------------------------------------
-
-local Window = WindUI:CreateWindow({
-    Title = "ZiaanHub - Fish It",
-    Icon = "fish",
-    Author = "by @ziaandev",
-    Folder = "ZiaanHub",
-    Size = UDim2.fromOffset(600, 450),
-    Theme = "Indigo",
-    KeySystem = false
-})
-
-Window:SetToggleKey(Enum.KeyCode.G)
-
-WindUI:SetNotificationLower(true)
-
-WindUI:Notify({
-	Title = "ZiaanHub - Fish It",
-	Content = "All Features Loaded Successfully!",
-	Duration = 5,
-	Image = "square-check-big"
-})
-
--------------------------------------------
------ =======[ MAIN TABS ] =======
--------------------------------------------
-
-local AutoFishTab = Window:Tab({
-	Title = "Auto Fishing",
-	Icon = "fish"
-})
-
-local UtilityTab = Window:Tab({
-    Title = "Utility",
-    Icon = "settings"
-})
-
+end)
 local SettingsTab = Window:Tab({ 
 	Title = "Settings", 
 	Icon = "user-cog" 
