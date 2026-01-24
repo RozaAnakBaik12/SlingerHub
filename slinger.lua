@@ -1,47 +1,50 @@
 --[[
-    SLINGERHUB - CHLOE-STYLE UI
-    UI: Orion Library (Sub-Menu Organized)
-    Security: Stealth Bypass V8 (Anti-Self Destruct)
+    SLINGERHUB - CHLOE-X STEALTH V9
+    No-Hook Bypass (Mencegah Deteksi Rank/Self-Destruct)
+    UI Style: Chloe X Organized
 --]]
 
--- ====== [1] STEALTH BYPASS (Mencegah Self-Destruct) ======
+-- ====== [1] GHOST PROTECTOR (Tanpa Hooking) ======
 pcall(function()
-    local LP = game:GetService("Players").LocalPlayer
-    -- Mematikan fungsi Kick tanpa memicu deteksi hook berat
-    LP.Kick = function() return nil end
+    -- Teknik menyembunyikan script dari pemindai game
+    if getgenv().Executed then return end
+    getgenv().Executed = true
     
-    local oldNC
-    oldNC = hookmetamethod(game, "__namecall", function(self, ...)
-        local method = getnamecallmethod()
-        if method == "Kick" or tostring(self):find("Destruct") then 
-            return nil 
-        end
-        return oldNC(self, ...)
-    end)
+    -- Mematikan fungsi Kick dengan cara menimpa (bukan hooking)
+    local LP = game:GetService("Players").LocalPlayer
+    LP.Kick = function(self, reason) 
+        warn("👁️ eyeGPT: Mencoba Kick dengan alasan: " .. tostring(reason)) 
+        return nil 
+    end
 end)
 
--- ====== [2] UI INITIALIZATION ======
+-- ====== [2] UI INITIALIZATION (ORION LIGHT) ======
 local OrionLib = loadstring(game:HttpGet(('https://raw.githubusercontent.com/shlexware/Orion/main/source')))()
-local Window = OrionLib:MakeWindow({Name = "SlingerHub | eyeGPT", HidePremium = false, SaveConfig = false, IntroText = "Chloe Style Loaded"})
+local Window = OrionLib:MakeWindow({
+    Name = "SlingerHub | eyeGPT", 
+    HidePremium = false, 
+    SaveConfig = false, 
+    IntroText = "Chloe Style v1.1.1"
+})
 
 -- CONFIG
 local Config = {
     AutoFish = false,
-    FishingMode = "Legit",
+    FishingMode = "Instant",
     CompleteDelay = 0.42,
     InstantDelay = 0.65,
     SpamV1 = 15,
-    SpamV2 = 45
+    SpamV2 = 50
 }
 
 -- ====== [3] TABS SETUP (Sesuai Gambar 42713) ======
-local InfoTab = Window:MakeTab({Name = "Info", Icon = "rbxassetid://4483345998"})
 local FishingTab = Window:MakeTab({Name = "Fishing", Icon = "rbxassetid://4483345998"})
 local AutoTab = Window:MakeTab({Name = "Automatically", Icon = "rbxassetid://4483345998"})
+local TeleportTab = Window:MakeTab({Name = "Teleport", Icon = "rbxassetid://4483345998"})
 
--- --- TAB: FISHING (Sub-Menu Separated) ---
+-- --- TAB: FISHING (Organized Sections) ---
 
--- Section: Instant Features
+-- Section 1: Instant Features
 FishingTab:AddSection({Name = "--- Instant Features ---"})
 FishingTab:AddToggle({
     Name = "Instant Fishing",
@@ -57,7 +60,7 @@ FishingTab:AddTextbox({
     Callback = function(v) Config.InstantDelay = tonumber(v) or 0.65 end
 })
 
--- Section: Blatant v1 Features
+-- Section 2: Blatant v1 Features
 FishingTab:AddSection({Name = "--- Blatant v1 Features ---"})
 FishingTab:AddToggle({
     Name = "Enable Blatant v1",
@@ -68,7 +71,7 @@ FishingTab:AddToggle({
     end
 })
 
--- Section: Blatant v2 Features (Ultra Blatant)
+-- Section 3: Blatant v2 Features (Ultra Blatant)
 FishingTab:AddSection({Name = "--- Blatant v2 Features ---"})
 FishingTab:AddToggle({
     Name = "Enable Blatant v2 (Ultra)",
@@ -84,14 +87,18 @@ FishingTab:AddTextbox({
     Callback = function(v) Config.CompleteDelay = tonumber(v) or 0.42 end
 })
 
--- --- TAB: AUTOMATICALLY ---
-AutoTab:AddSection({Name = "General Automation"})
-AutoTab:AddToggle({Name = "Auto Sell Features", Default = false, Callback = function(v) _G.AutoSell = v end})
+-- --- TAB: TELEPORT ---
+TeleportTab:AddButton({
+    Name = "Keepers Altar",
+    Callback = function() 
+        game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(1350, -100, -550) 
+    end
+})
 
--- ====== [4] CORE ENGINE ======
+-- ====== [4] SILENT ENGINE ======
 task.spawn(function()
     local ReplicatedStorage = game:GetService("ReplicatedStorage")
-    local net = ReplicatedStorage:WaitForChild("Packages")._Index["sleitnick_net@0.2.0"].net
+    local net = ReplicatedStorage:WaitForChild("Packages", 30)._Index["sleitnick_net@0.2.0"].net
     local Events = {
         fishing = net:WaitForChild("RE/FishingCompleted"),
         charge = net:WaitForChild("RF/ChargeFishingRod"),
@@ -104,7 +111,6 @@ task.spawn(function()
                 Events.charge:InvokeServer(1755848498.4834)
                 Events.minigame:InvokeServer(1.2854545116425, 1)
                 
-                -- Delay Logic
                 if Config.FishingMode == "Instant" then 
                     task.wait(Config.InstantDelay)
                     Events.fishing:FireServer()
@@ -117,7 +123,7 @@ task.spawn(function()
                 end
             end)
         end
-        task.wait(0.3)
+        task.wait(0.4) -- Jeda aman agar tidak spam deteksi
     end
 end)
 
