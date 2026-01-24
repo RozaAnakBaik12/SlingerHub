@@ -1,56 +1,97 @@
 --[[
-    SLINGERHUB - STEALTH FINAL V7
-    No Hooking - No Self Destruct Trigger
-    UI: Mobile-Friendly Lightweight
+    SLINGERHUB - CHLOE-STYLE UI
+    UI: Orion Library (Sub-Menu Organized)
+    Security: Stealth Bypass V8 (Anti-Self Destruct)
 --]]
 
--- 1. SILENT INITIALIZATION
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local LP = game:GetService("Players").LocalPlayer
+-- ====== [1] STEALTH BYPASS (Mencegah Self-Destruct) ======
+pcall(function()
+    local LP = game:GetService("Players").LocalPlayer
+    -- Mematikan fungsi Kick tanpa memicu deteksi hook berat
+    LP.Kick = function() return nil end
+    
+    local oldNC
+    oldNC = hookmetamethod(game, "__namecall", function(self, ...)
+        local method = getnamecallmethod()
+        if method == "Kick" or tostring(self):find("Destruct") then 
+            return nil 
+        end
+        return oldNC(self, ...)
+    end)
+end)
 
--- 2. LIGHTWEIGHT UI
-local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
-local Window = Library.CreateLib("SlingerHub | Team eyeGPT", "Midnight")
+-- ====== [2] UI INITIALIZATION ======
+local OrionLib = loadstring(game:HttpGet(('https://raw.githubusercontent.com/shlexware/Orion/main/source')))()
+local Window = OrionLib:MakeWindow({Name = "SlingerHub | eyeGPT", HidePremium = false, SaveConfig = false, IntroText = "Chloe Style Loaded"})
 
--- CONFIG (Sesuai Gambar)
+-- CONFIG
 local Config = {
     AutoFish = false,
-    FishingMode = "Instant",
+    FishingMode = "Legit",
     CompleteDelay = 0.42,
-    CancelDelay = 0.3,
     InstantDelay = 0.65,
-    SpamPower = 30
+    SpamV1 = 15,
+    SpamV2 = 45
 }
 
--- 3. TABS (Pahaji Style Sidebar)
-local Main = Window:NewTab("Main")
-local Exclusive = Window:NewTab("Exclusive")
-local Teleport = Window:NewTab("Teleport")
+-- ====== [3] TABS SETUP (Sesuai Gambar 42713) ======
+local InfoTab = Window:MakeTab({Name = "Info", Icon = "rbxassetid://4483345998"})
+local FishingTab = Window:MakeTab({Name = "Fishing", Icon = "rbxassetid://4483345998"})
+local AutoTab = Window:MakeTab({Name = "Automatically", Icon = "rbxassetid://4483345998"})
 
--- --- TAB: MAIN ---
-local MainSection = Main:NewSection("Fishing")
-MainSection:NewToggle("Auto Fishing", "Start fishing", function(v)
-    Config.AutoFish = v
-end)
+-- --- TAB: FISHING (Sub-Menu Separated) ---
 
--- --- TAB: EXCLUSIVE (Ultra Blatant V3) ---
-local ExSection = Exclusive:NewSection("Ultra Blatant V3")
-ExSection:NewDropdown("Mode", "Pilih Mode", {"Legit", "Instant", "Ultra Blatant V3"}, function(v)
-    Config.FishingMode = v
-end)
-ExSection:NewTextBox("Complete Delay", "Default: 0.42", function(v)
-    Config.CompleteDelay = tonumber(v) or 0.42
-end)
+-- Section: Instant Features
+FishingTab:AddSection({Name = "--- Instant Features ---"})
+FishingTab:AddToggle({
+    Name = "Instant Fishing",
+    Default = false,
+    Callback = function(v) 
+        Config.AutoFish = v 
+        Config.FishingMode = "Instant"
+    end
+})
+FishingTab:AddTextbox({
+    Name = "Instant Delay",
+    Default = "0.65",
+    Callback = function(v) Config.InstantDelay = tonumber(v) or 0.65 end
+})
 
--- --- TAB: TELEPORT ---
-local TeleSection = Teleport:NewSection("Locations")
-TeleSection:NewButton("Keepers Altar", "Teleport to Altar", function()
-    LP.Character.HumanoidRootPart.CFrame = CFrame.new(1350, -100, -550)
-end)
+-- Section: Blatant v1 Features
+FishingTab:AddSection({Name = "--- Blatant v1 Features ---"})
+FishingTab:AddToggle({
+    Name = "Enable Blatant v1",
+    Default = false,
+    Callback = function(v) 
+        Config.AutoFish = v 
+        Config.FishingMode = "BlatantV1"
+    end
+})
 
--- 4. STEALTH ENGINE (Tanpa Hooking Agar Tidak Meledak)
+-- Section: Blatant v2 Features (Ultra Blatant)
+FishingTab:AddSection({Name = "--- Blatant v2 Features ---"})
+FishingTab:AddToggle({
+    Name = "Enable Blatant v2 (Ultra)",
+    Default = false,
+    Callback = function(v) 
+        Config.AutoFish = v 
+        Config.FishingMode = "BlatantV2"
+    end
+})
+FishingTab:AddTextbox({
+    Name = "Complete Delay",
+    Default = "0.42",
+    Callback = function(v) Config.CompleteDelay = tonumber(v) or 0.42 end
+})
+
+-- --- TAB: AUTOMATICALLY ---
+AutoTab:AddSection({Name = "General Automation"})
+AutoTab:AddToggle({Name = "Auto Sell Features", Default = false, Callback = function(v) _G.AutoSell = v end})
+
+-- ====== [4] CORE ENGINE ======
 task.spawn(function()
-    local net = ReplicatedStorage:WaitForChild("Packages", 30)._Index["sleitnick_net@0.2.0"].net
+    local ReplicatedStorage = game:GetService("ReplicatedStorage")
+    local net = ReplicatedStorage:WaitForChild("Packages")._Index["sleitnick_net@0.2.0"].net
     local Events = {
         fishing = net:WaitForChild("RE/FishingCompleted"),
         charge = net:WaitForChild("RF/ChargeFishingRod"),
@@ -63,17 +104,21 @@ task.spawn(function()
                 Events.charge:InvokeServer(1755848498.4834)
                 Events.minigame:InvokeServer(1.2854545116425, 1)
                 
-                if Config.FishingMode == "Legit" then task.wait(2.5)
-                elseif Config.FishingMode == "Instant" then task.wait(Config.InstantDelay)
-                else task.wait(Config.CompleteDelay) end
-                
-                if Config.FishingMode == "Ultra Blatant V3" then
-                    for i = 1, Config.SpamPower do Events.fishing:FireServer() end
-                else
+                -- Delay Logic
+                if Config.FishingMode == "Instant" then 
+                    task.wait(Config.InstantDelay)
                     Events.fishing:FireServer()
+                elseif Config.FishingMode == "BlatantV1" then
+                    task.wait(Config.CompleteDelay)
+                    for i = 1, Config.SpamV1 do Events.fishing:FireServer() end
+                elseif Config.FishingMode == "BlatantV2" then
+                    task.wait(Config.CompleteDelay)
+                    for i = 1, Config.SpamV2 do Events.fishing:FireServer() end
                 end
             end)
         end
-        task.wait(Config.CancelDelay)
+        task.wait(0.3)
     end
 end)
+
+OrionLib:Init()
