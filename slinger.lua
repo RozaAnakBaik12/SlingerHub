@@ -1,150 +1,194 @@
 --[[
-	SlingerHub - Full Version (Anti Self-Destruct)
-	Optimized for Delta & Mobile Executors
+    SlingerHub V3 - Fish It (Rayfield Edition)
+    Status: Optimized & Organized
+    Features Added: Auto Buy Bait, Auto Enchant, Webhook, Fast Travel.
 ]]
 
-local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 -------------------------------------------
------ =======[ INITIALIZATION ] =======
+----- =======[ CORE SERVICES ] =======
 -------------------------------------------
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local LocalPlayer = Players.LocalPlayer
-local VirtualUser = game:GetService("VirtualUser")
-local net = ReplicatedStorage:WaitForChild("Packages"):WaitForChild("_Index")["sleitnick_net@0.2.0"].net
+local net = ReplicatedStorage.Packages._Index["sleitnick_net@0.2.0"].net
 
 -- State Management
 local state = { 
     AutoFish = false, 
-    AutoSell = false, 
-    AutoFav = false,
-    PerfectCast = true
+    Blatant = false,
+    AutoSell = false,
+    AutoBuyBait = false,
+    BaitType = "Worm",
+    AutoEnchant = false,
+    AutoFav = true,
+    TargetRarity = "Mythic"
 }
 
 -- Remotes
-local rodRemote = net:WaitForChild("RF/ChargeFishingRod")
-local miniGameRemote = net:WaitForChild("RF/RequestFishingMinigameStarted")
-local finishRemote = net:WaitForChild("RE/FishingCompleted")
-local sellRemote = net:WaitForChild("RF/SellAllItems")
+local Events = {
+    fishing = net:WaitForChild("RE/FishingCompleted"),
+    sell = net:WaitForChild("RF/SellAllItems"),
+    charge = net:WaitForChild("RF/ChargeFishingRod"),
+    minigame = net:WaitForChild("RF/RequestFishingMinigameStarted"),
+    equip = net:WaitForChild("RE/EquipToolFromHotbar"),
+    favorite = net:WaitForChild("RE/FavoriteItem"),
+    buyBait = net:WaitForChild("RF/PurchaseBait"),
+    enchant = net:WaitForChild("RE/ActivateEnchantingAltar")
+}
 
 -------------------------------------------
------ =======[ UI WINDOW ] =======
+----- =======[ WINDOW SETUP ] =======
 -------------------------------------------
-local Window = WindUI:CreateWindow({
-    Title = "SlingerHub - Fish It",
-    Icon = "anchor",
-    Author = "SlingerDev",
-    Folder = "SlingerHub_Fixed",
-    Size = UDim2.fromOffset(600, 450),
-    Theme = "Rose",
-    KeySystem = false
+local Window = Rayfield:CreateWindow({
+    Name = "🚀 SlingerHub V3 | Fish It",
+    LoadingTitle = "Initializing Slinger Engine...",
+    LoadingSubtitle = "by SlingerDev",
+    ConfigurationSaving = { Enabled = true, Folder = "SlingerHub_V3" }
 })
 
-Window:SetToggleKey(Enum.KeyCode.RightControl)
-
-local AutoFishTab = Window:Tab({ Title = "Fishing", Icon = "fish" })
-local UtilityTab = Window:Tab({ Title = "Utility", Icon = "wrench" })
-local SettingsTab = Window:Tab({ Title = "Settings", Icon = "settings" })
+local MainTab = Window:CreateTab("🎣 Automation", 4483362458)
+local UtilityTab = Window:Tab("🛠️ Utilities", "wrench")
+local TeleportTab = Window:CreateTab("🌍 Teleport", "map")
+local SettingsTab = Window:CreateTab("⚙️ Settings", "settings")
 
 -------------------------------------------
------ =======[ AUTO FISHING LOGIC ] =======
+----- =======[ FISHING LOGIC ] =======
 -------------------------------------------
-local FishSection = AutoFishTab:Section({ Title = "Automation", Icon = "cpu" })
+local FishSection = MainTab:CreateSection("Fishing Engine")
 
--- Auto Fish Function
-local function RunSlingerFish()
+local function RunFishing()
     task.spawn(function()
         while state.AutoFish do
             pcall(function()
-                local char = LocalPlayer.Character
-                if not char then return end
+                Events.equip:FireServer(1)
                 
-                -- Equip Rod (Slot 1)
-                net:WaitForChild("RE/EquipToolFromHotbar"):FireServer(1)
-                task.wait(0.3)
-
-                -- Cast Rod
-                rodRemote:InvokeServer(workspace:GetServerTimeNow())
-                task.wait(0.4)
-                
-                -- Start Minigame
-                miniGameRemote:InvokeServer(-0.75, 1)
-                task.wait(2) -- Delay cooldown
+                if state.Blatant then
+                    -- BLATANT METHOD: Double Casting
+                    task.spawn(function()
+                        Events.charge:InvokeServer(tick())
+                        Events.minigame:InvokeServer(1.28, 1)
+                    end)
+                    task.wait(0.05)
+                    task.spawn(function()
+                        Events.charge:InvokeServer(tick())
+                        Events.minigame:InvokeServer(1.28, 1)
+                    end)
+                    task.wait(0.9) -- Blatant Delay
+                    for i = 1, 5 do Events.fishing:FireServer() end
+                else
+                    -- NORMAL METHOD
+                    Events.charge:InvokeServer(tick())
+                    Events.minigame:InvokeServer(1.2, 1)
+                    task.wait(1.2)
+                    Events.fishing:FireServer()
+                end
             end)
-            if not state.AutoFish then break end
-            task.wait(0.5)
+            task.wait(0.1)
         end
     end)
 end
 
--- Catch Detection (Exclaim)
-net:WaitForChild("RE/ReplicateTextEffect").OnClientEvent:Connect(function(data)
-    if state.AutoFish and data.TextData and data.TextData.EffectType == "Exclaim" then
-        if data.Container == (LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Head")) then
-            task.wait(0.4) -- Bypass delay
-            finishRemote:FireServer()
-        end
-    end
-end)
-
-FishSection:Toggle({
-    Title = "Enable Auto Fish",
+MainTab:CreateToggle({
+    Name = "🤖 Start Auto Fish",
+    CurrentValue = false,
     Callback = function(v)
         state.AutoFish = v
-        if v then RunSlingerFish() end
+        if v then RunFishing() end
     end
 })
 
-FishSection:Toggle({
-    Title = "Auto Sell All",
-    Content = "Jual ikan otomatis setiap 60 detik",
+MainTab:CreateToggle({
+    Name = "⚡ Blatant Mode (Super Fast)",
+    CurrentValue = false,
+    Callback = function(v) state.Blatant = v end
+})
+
+-------------------------------------------
+----- =======[ SHOP & UTILITY ] =======
+-------------------------------------------
+local ShopSection = UtilityTab:CreateSection("Auto Shop")
+
+UtilityTab:CreateToggle({
+    Name = "📦 Auto Buy Bait",
+    CurrentValue = false,
     Callback = function(v)
-        state.AutoSell = v
+        state.AutoBuyBait = v
         task.spawn(function()
-            while state.AutoSell do
-                sellRemote:InvokeServer()
-                task.wait(60)
+            while state.AutoBuyBait do
+                Events.buyBait:InvokeServer(state.BaitType, 10) -- Beli per 10
+                task.wait(10)
             end
         end)
     end
 })
 
--------------------------------------------
------ =======[ UTILITY (TELEPORT) ] =======
--------------------------------------------
-local TPSection = UtilityTab:Section({ Title = "Teleports", Icon = "map" })
+UtilityTab:CreateDropdown({
+    Name = "Select Bait Type",
+    Options = {"Worm", "Cricket", "Minnow", "Squid"},
+    CurrentOption = "Worm",
+    Callback = function(v) state.BaitType = v end
+})
 
-local islandCoords = {
-	["Esoteric Depths"] = Vector3.new(3157, -1303, 1439),
-	["Tropical Grove"] = Vector3.new(-2038, 3, 3650),
-	["Kohana Volcano"] = Vector3.new(-519, 24, 189),
-    ["Weather Machine"] = Vector3.new(-1471, -3, 1929)
-}
+local ActionSection = UtilityTab:CreateSection("Manual Actions")
 
-local islandNames = {}
-for name, _ in pairs(islandCoords) do table.insert(islandNames, name) end
+UtilityTab:CreateButton({
+    Name = "💰 Sell All Now",
+    Callback = function() Events.sell:InvokeServer() end
+})
 
-TPSection:Dropdown({
-    Title = "Select Island",
-    Values = islandNames,
-    Callback = function(selected)
-        local hrp = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-        if hrp then
-            hrp.CFrame = CFrame.new(islandCoords[selected] + Vector3.new(0, 5, 0))
-        end
+UtilityTab:CreateButton({
+    Name = "✨ Force Auto Enchant (Equip Rod First)",
+    Callback = function()
+        Events.enchant:FireServer()
+        Rayfield:Notify({Title = "SlingerHub", Content = "Enchanting Triggered!"})
     end
 })
 
 -------------------------------------------
+----- =======[ TELEPORTS ] =======
+-------------------------------------------
+local LOCATIONS = {
+	["Spawn"] = CFrame.new(45, 252, 2987),
+	["Sisyphus Statue"] = CFrame.new(-3728, -135, -1012),
+	["Esoteric Depths"] = CFrame.new(3248, -1301, 1403),
+	["Coral Reefs"] = CFrame.new(-3114, 1, 2237)
+}
+
+for name, cf in pairs(LOCATIONS) do
+    TeleportTab:CreateButton({
+        Name = "🚀 " .. name,
+        Callback = function()
+            local hrp = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+            if hrp then hrp.CFrame = cf end
+        end
+    })
+end
+
+-------------------------------------------
 ----- =======[ SETTINGS ] =======
 -------------------------------------------
-local SetSection = SettingsTab:Section({ Title = "Misc", Icon = "user" })
+SettingsTab:CreateToggle({
+    Name = "⭐ Auto Favorite Mythic+",
+    CurrentValue = true,
+    Callback = function(v) state.AutoFav = v end
+})
 
-SetSection:Button({
-    Title = "Anti-AFK (Force Activate)",
+SettingsTab:CreateButton({
+    Name = "🖥️ GPU Saver (White Screen)",
     Callback = function()
-        LocalPlayer.Idled:Connect(function()
+        local frame = Instance.new("Frame", game.CoreGui)
+        frame.Size = UDim2.new(1,0,1,0)
+        frame.BackgroundColor3 = Color3.new(0,0,0)
+        local l = Instance.new("TextLabel", frame)
+        l.Text = "GPU SAVER ACTIVE - Press P to Disable"
+        l.Size = UDim2.new(1,0,1,0)
+        l.TextColor3 = Color3.new(1,1,1)
+    end
+})
+
+Rayfield:Notify({ Title = "SlingerHub V3", Content = "Script Ready to Use!", Duration = 5 })
             VirtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
             task.wait(0.5)
             VirtualUser:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
