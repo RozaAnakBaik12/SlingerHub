@@ -1,7 +1,7 @@
 --[[
-	SLINGERHUB - FULL SIDEBAR EDITION
+	SLINGERHUB - WORLD EXPLORER EDITION
 	Tabs: Player, Main, Exclusive, Teleport, Settings
-	Theme: Modern Indigo
+	Feature: Full Island Teleports + Instant Fishing
 ]]
 
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
@@ -9,9 +9,9 @@ local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/rel
 -- 1. WINDOW SETUP
 local Window = WindUI:CreateWindow({
     Title = "SlingerHub - Premium",
-    Icon = "fish",
+    Icon = "map",
     Author = "eyeGPT",
-    Folder = "SlingerHub_Full",
+    Folder = "SlingerHub_Final",
     Size = UDim2.fromOffset(580, 420),
     Theme = "Indigo",
     KeySystem = false
@@ -24,73 +24,51 @@ local ExclusiveTab = Window:Tab({ Title = "Exclusive", Icon = "star" })
 local TeleportTab = Window:Tab({ Title = "Teleport", Icon = "map-pin" })
 local SettingsTab = Window:Tab({ Title = "Settings", Icon = "settings" })
 
--- --- TAB: PLAYER ---
-local PlayerSec = PlayerTab:Section({ Title = "Character Mods" })
-PlayerSec:Slider({
-    Title = "WalkSpeed",
-    Min = 16, Max = 200, Default = 16,
-    Callback = function(v) game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = v end
-})
-PlayerSec:Slider({
-    Title = "JumpPower",
-    Min = 50, Max = 300, Default = 50,
-    Callback = function(v) game.Players.LocalPlayer.Character.Humanoid.JumpPower = v end
-})
-
--- --- TAB: MAIN (FISHING CORE) ---
-local Config = { AutoFish = false, Power = 8, Delay = 1.20 }
-local MainSec = MainTab:Section({ Title = "Fishing Automation" })
+-- --- TAB: MAIN (INSTANT FISHING) ---
+local Config = { AutoFish = false, Delay = 0.65 }
+local MainSec = MainTab:Section({ Title = "Instant Fishing" })
 
 MainSec:Toggle({
-    Title = "Enable Dupe Fish",
-    Content = "Mancing + Dupe sekaligus",
+    Title = "Enable Instant Fishing",
+    Content = "Menangkap ikan otomatis tanpa dupe",
     Callback = function(v) Config.AutoFish = v end
 })
 
 MainSec:Slider({
-    Title = "Dupe Power",
-    Min = 1, Max = 100, Default = 8,
-    Callback = function(v) Config.Power = v end
+    Title = "Instant Delay",
+    Min = 0.40, Max = 2.00, Default = 0.65,
+    Callback = function(v) Config.Delay = v end
 })
 
-MainSec:Input({
-    Title = "Safety Delay",
-    Placeholder = "1.20",
-    Callback = function(v) Config.Delay = tonumber(v) or 1.20 end
-})
+-- --- TAB: TELEPORT (ALL ISLANDS) ---
+local TeleSec = TeleportTab:Section({ Title = "Island & Location Select" })
 
--- --- TAB: EXCLUSIVE (DUPE & SNIPER) ---
-local ExSec = ExclusiveTab:Section({ Title = "Experimental Features" })
-ExSec:Button({
-    Title = "Try Inventory Dupe",
-    Content = "Eksperimen penggandaan tas (High Risk)",
-    Callback = function()
-        WindUI:Notify({Title = "Warning", Content = "Memicu sinkronisasi database...", Duration = 3})
-    end
-})
-
--- --- TAB: TELEPORT ---
-local LocSec = TeleportTab:Section({ Title = "World Locations" })
-local Locations = {
-    ["Moosewood"] = Vector3.new(385, 5, 20),
-    ["Keepers Altar"] = Vector3.new(1350, -100, -550)
+local Destinasi = {
+    ["Moosewood (Main)"] = Vector3.new(385, 5, 20),
+    ["Roslit Bay"] = Vector3.new(-1450, 5, 650),
+    ["Terrapin Island"] = Vector3.new(-100, 5, 1450),
+    ["Sunken Ship"] = Vector3.new(-2500, -50, -1000),
+    ["Mushgrove Swamp"] = Vector3.new(2500, 5, -700),
+    ["Snowcap Island"] = Vector3.new(2600, 5, 2400),
+    ["Keepers Altar"] = Vector3.new(1350, -100, -550),
+    ["Desolate Deep"] = Vector3.new(-1500, -200, -2500)
 }
-for Name, Pos in pairs(Locations) do
-    LocSec:Button({
-        Title = "Teleport to " .. Name,
+
+for Name, Coord in pairs(Destinasi) do
+    TeleSec:Button({
+        Title = "Go to " .. Name,
         Callback = function()
-            game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(Pos)
+            game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(Coord)
+            WindUI:Notify({Title = "Teleport", Content = "Berhasil ke " .. Name, Duration = 2})
         end
     })
 end
 
--- --- TAB: SETTINGS ---
-SettingsTab:Section({ Title = "UI Settings" }):Button({
-    Title = "Unload Script",
-    Callback = function() Window:Close() end
-})
+-- --- TAB: PLAYER ---
+local PlayerSec = PlayerTab:Section({ Title = "Movement" })
+PlayerSec:Slider({ Title = "WalkSpeed", Min = 16, Max = 200, Default = 16, Callback = function(v) game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = v end })
 
--- 3. CORE ENGINE
+-- 3. INSTANT ENGINE
 task.spawn(function()
     local net = game:GetService("ReplicatedStorage"):WaitForChild("Packages")._Index["sleitnick_net@0.2.0"].net
     while true do
@@ -100,12 +78,10 @@ task.spawn(function()
                 task.wait(0.2)
                 net["RF/RequestFishingMinigameStarted"]:InvokeServer(-0.75, 1)
                 task.wait(Config.Delay)
-                for i = 1, Config.Power do
-                    net["RE/FishingCompleted"]:FireServer()
-                end
+                net["RE/FishingCompleted"]:FireServer()
             end)
         end
-        task.wait(1.5)
+        task.wait(1.0)
     end
 end)
 
