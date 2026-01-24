@@ -1,97 +1,108 @@
---[[ 
-    SLINGERHUB V5.2 - STABLE
-    REMOVED: Rank Check (Anti Self-Destruct) & Animation Waiting (Fix Infinite Yield)
-    KEPT: Auto Fish, Blatant Mode, Auto Sell, Teleport.
+--[[
+    SlingerHub V5.3 - WindUI Edition (Clean & Stable)
+    FIX: Anti Self-Destruct & Anti Infinite Yield
+    REMOVED: Rank Check & Animation Assets Waiting
 ]]
 
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
 
 -------------------------------------------
 ----- =======[ CORE SERVICES ] =======
 -------------------------------------------
-local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
+local VirtualUser = game:GetService("VirtualUser")
 
--- Fix Infinite Yield: Ambil Network tanpa menunggu aset animasi
+-- bypass network tanpa stuck (Fix Infinite Yield)
 local net = nil
 pcall(function()
     net = ReplicatedStorage.Packages._Index["sleitnick_net@0.2.0"].net
 end)
 
+-- State Management
 local state = { 
     AutoFish = false, 
-    Blatant = false, 
-    AutoSell = false 
+    Blatant = false,
+    AutoSell = false,
+    AutoBuyBait = false,
+    BaitType = "Worm"
 }
 
 -------------------------------------------
 ----- =======[ UI WINDOW ] =======
 -------------------------------------------
-local Window = Rayfield:CreateWindow({
-    Name = "🎣 SlingerHub V5.2 | Stable",
-    LoadingTitle = "Removing Error Modules...",
-    ConfigurationSaving = { Enabled = false }
+local Window = WindUI:CreateWindow({
+    Title = "SlingerHub V5.3",
+    Icon = "anchor",
+    Author = "SlingerDev",
+    Folder = "SlingerHub_V5_Clean",
+    Size = UDim2.fromOffset(580, 420),
+    Theme = "Rose",
+    KeySystem = false
 })
 
-local MainTab = Window:CreateTab("🏠 Main", 4483362458)
-local TeleportTab = Window:CreateTab("🌍 Teleport", "map")
+local MainTab = Window:Tab({ Title = "Fishing", Icon = "fish" })
+local UtilityTab = Window:Tab({ Title = "Utility", Icon = "wrench" })
 
 -------------------------------------------
------ =======[ FISHING LOGIC ] =======
+----- =======[ FISHING ENGINE ] =======
 -------------------------------------------
-MainTab:CreateSection("Safe Fishing")
+local FishSection = MainTab:Section({ Title = "Automation", Icon = "cpu" })
 
-local function RunFishing()
+local function RunSlingerFish()
     task.spawn(function()
         while state.AutoFish do
             pcall(function()
-                -- Gunakan Remote langsung (Bypass Animasi yang bikin error)
+                -- Langsung tembak Remote (Bypass Animasi biang kerok error)
                 net["RE/EquipToolFromHotbar"]:FireServer(1)
                 
                 if state.Blatant then
-                    -- Method Blatant (Double Cast - Cepat)
+                    -- BLATANT METHOD (Double Cast)
                     task.spawn(function()
                         net["RF/ChargeFishingRod"]:InvokeServer(tick())
                         net["RF/RequestFishingMinigameStarted"]:InvokeServer(1.28, 1)
                     end)
-                    task.wait(0.1)
-                    for i = 1, 3 do net["RE/FishingCompleted"]:FireServer() end
+                    task.wait(0.05)
+                    task.spawn(function()
+                        net["RF/ChargeFishingRod"]:InvokeServer(tick())
+                        net["RF/RequestFishingMinigameStarted"]:InvokeServer(1.28, 1)
+                    end)
+                    task.wait(0.85)
+                    for i = 1, 4 do net["RE/FishingCompleted"]:FireServer() end
                 else
-                    -- Method Normal (Stabil)
+                    -- NORMAL METHOD
                     net["RF/ChargeFishingRod"]:InvokeServer(tick())
                     net["RF/RequestFishingMinigameStarted"]:InvokeServer(1.2, 1)
                     task.wait(1.5)
                     net["RE/FishingCompleted"]:FireServer()
                 end
             end)
-            task.wait(0.5)
+            task.wait(0.2)
         end
     end)
 end
 
-MainTab:CreateToggle({
-    Name = "🤖 Auto Fish",
-    CurrentValue = false,
+FishSection:Toggle({
+    Title = "Enable Auto Fish",
     Callback = function(v)
         state.AutoFish = v
-        if v then RunFishing() end
+        if v then RunSlingerFish() end
     end
 })
 
-MainTab:CreateToggle({
-    Name = "⚡ Blatant Mode",
-    CurrentValue = false,
+FishSection:Toggle({
+    Title = "Blatant Mode (Fast)",
     Callback = function(v) state.Blatant = v end
 })
 
 -------------------------------------------
 ----- =======[ UTILITIES ] =======
 -------------------------------------------
-MainTab:CreateSection("Fast Utility")
+local ShopSection = UtilityTab:Section({ Title = "Shop & Items" })
 
-MainTab:CreateToggle({
-    Name = "💰 Auto Sell (30s)",
+ShopSection:Toggle({
+    Title = "Auto Sell All (30s)",
     Callback = function(v)
         state.AutoSell = v
         task.spawn(function()
@@ -103,23 +114,19 @@ MainTab:CreateToggle({
     end
 })
 
--------------------------------------------
------ =======[ TELEPORTS ] =======
--------------------------------------------
-local LOCATIONS = {
-	["Sisyphus Statue"] = CFrame.new(-3728, -135, -1012),
-	["Esoteric Depths"] = CFrame.new(3248, -1301, 1403),
-	["Coral Reefs"] = CFrame.new(-3114, 1, 2237)
-}
+ShopSection:Button({
+    Title = "Teleport to Sisyphus Statue",
+    Callback = function()
+        local hrp = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if hrp then hrp.CFrame = CFrame.new(-3728, -135, -1012) end
+    end
+})
 
-for name, cf in pairs(LOCATIONS) do
-    TeleportTab:CreateButton({
-        Name = "🚀 Go to " .. name,
-        Callback = function()
-            local hrp = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-            if hrp then hrp.CFrame = cf end
-        end
-    })
-end
+-- Anti-AFK Force
+LocalPlayer.Idled:Connect(function()
+    VirtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+    task.wait(0.5)
+    VirtualUser:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+end)
 
-Rayfield:Notify({ Title = "SlingerHub", Content = "Error modules removed. Ready to fish!", Duration = 5 })
+WindUI:Notify({Title = "SlingerHub", Content = "UI Loaded! Rank Check & Error Assets Removed."})
