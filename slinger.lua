@@ -1,10 +1,10 @@
 --[[
-    SlingerHub - SUPREME OWNER EDITION
-    Status: FULL FEATURES / ANTI-CRASH / BLATANT
-    Authorized by: ArgaaaAi
+    SlingerHub - Premium UI Edition
+    Style: Pahaji Hub (Elegant Sidebar)
+    Status: Owner Mode / Anti-Self Destruct / Full Blatant
 --]]
 
--- 1. ULTIMATE BYPASS (Melindungi dari Kick & Self-Destruct)
+-- ====== ULTIMATE BYPASS (Melindungi dari Self-Destruct) ======
 pcall(function()
     local mt = getrawmetatable(game)
     setreadonly(mt, false)
@@ -14,89 +14,133 @@ pcall(function()
         if method == "Kick" or method == "kick" then return nil end
         return old(self, ...)
     end)
-    game:GetService("ContentProvider").PreloadAsync = function() return end
 end)
 
--- 2. LIBRARY LOADING (Kavo - Lebih Ringan untuk Mobile)
-local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
-local Window = Library.CreateLib("SlingerHub 👁️", "GrapeTheme")
+-- ====== UI LIBRARY SETUP (Fluent Style) ======
+local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 
--- 3. CONFIG & EVENTS
-local Config = {AutoFish = false, Blatant = false, Power = 20, Delay = 0.4, AutoSell = false}
+local Window = Fluent:CreateWindow({
+    Title = "SlingerHub | Team eyeGPT",
+    SubTitle = "by ArgaaaAi",
+    TabWidth = 160,
+    Size = UDim2.fromOffset(580, 460),
+    Acrylic = true,
+    Theme = "Dark",
+    MinimizeKey = Enum.KeyCode.LeftControl
+})
+
+-- ====== CONFIGURATION ======
+local Options = Fluent.Options
+local Config = {
+    AutoFish = false,
+    Blatant = false,
+    CompleteDelay = 0.42,
+    CancelDelay = 0.3,
+    ReCastDelay = 0.0,
+    SpamPower = 20
+}
+
+-- ====== SERVICES & EVENTS ======
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local net = ReplicatedStorage:WaitForChild("Packages", 20)._Index["sleitnick_net@0.2.0"].net
 local Events = {
     fishing = net:WaitForChild("RE/FishingCompleted"),
     charge = net:WaitForChild("RF/ChargeFishingRod"),
     minigame = net:WaitForChild("RF/RequestFishingMinigameStarted"),
-    equip = net:WaitForChild("RE/EquipToolFromHotbar"),
-    sell = net:WaitForChild("RF/SellAllItems")
+    equip = net:WaitForChild("RE/EquipToolFromHotbar")
 }
 
--- 4. MAIN TAB
-local Main = Window:NewTab("Main")
-local Section = Main:NewSection("Master Fishing")
+-- ====== TABS (Sesuai Gambar Sidebar) ======
+local Tabs = {
+    Main = Window:AddTab({ Title = "Main", Icon = "home" }),
+    Exclusive = Window:AddTab({ Title = "Exclusive", Icon = "star" }),
+    Teleport = Window:AddTab({ Title = "Teleport", Icon = "map-pin" }),
+    Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
+}
 
-Section:NewToggle("Auto Fishing", "Mulai memancing otomatis", function(v)
-    Config.AutoFish = v
+-- ====== EXCLUSIVE TAB (Isi Seperti Gambar) ======
+Tabs.Exclusive:AddSection("Ultra Blatant V3 Settings")
+
+local BlatantToggle = Tabs.Exclusive:AddToggle("UltraBlatant", {Title = "Ultra Blatant V3", Default = false })
+BlatantToggle:OnChanged(function()
+    Config.Blatant = Options.UltraBlatant.Value
+end)
+
+Tabs.Exclusive:AddInput("CompleteDelay", {
+    Title = "Complete Delay",
+    Default = "0.42",
+    Placeholder = "0.42",
+    Numeric = true,
+    Finished = true,
+    Callback = function(Value) Config.CompleteDelay = tonumber(Value) end
+})
+
+Tabs.Exclusive:AddInput("CancelDelay", {
+    Title = "Cancel Delay",
+    Default = "0.3",
+    Placeholder = "0.3",
+    Numeric = true,
+    Finished = true,
+    Callback = function(Value) Config.CancelDelay = tonumber(Value) end
+})
+
+Tabs.Exclusive:AddInput("ReCastDelay", {
+    Title = "Re-Cast Delay",
+    Default = "0.000",
+    Placeholder = "0.000",
+    Numeric = true,
+    Finished = true,
+    Callback = function(Value) Config.ReCastDelay = tonumber(Value) end
+})
+
+Tabs.Exclusive:AddButton({
+    Title = "Unlock FPS",
+    Description = "Boost your game performance",
+    Callback = function()
+        setfpscap(999)
+    end
+})
+
+-- ====== MAIN TAB (Master Switch) ======
+Tabs.Main:AddSection("Automation")
+
+local FishToggle = Tabs.Main:AddToggle("AutoFish", {Title = "Enable Auto Fish", Default = false })
+FishToggle:OnChanged(function()
+    Config.AutoFish = Options.AutoFish.Value
     task.spawn(function()
         while Config.AutoFish do
             pcall(function()
                 Events.equip:FireServer(1)
+                task.wait(Config.ReCastDelay)
+                
+                -- Casting
                 task.spawn(function()
                     Events.charge:InvokeServer(1755848498.4834)
                     task.wait(0.01)
                     Events.minigame:InvokeServer(1.2854545116425, 1)
                 end)
-                task.wait(Config.Delay)
-                local loop = Config.Blatant and Config.Power or 1
-                for i = 1, loop do
+                
+                task.wait(Config.CompleteDelay)
+                
+                -- Catching
+                if Config.Blatant then
+                    for i = 1, Config.SpamPower do
+                        Events.fishing:FireServer()
+                    end
+                else
                     Events.fishing:FireServer()
-                    if Config.Blatant then task.wait(0.01) end
                 end
             end)
-            task.wait(0.1)
+            task.wait(Config.CancelDelay)
         end
     end)
 end)
 
-Section:NewToggle("Blatant Mode", "Kecepatan brutal", function(v)
-    Config.Blatant = v
-end)
+-- ====== STARTUP ======
+Window:SelectTab(Tabs.Exclusive)
 
-Section:NewSlider("Blatant Power", "Jumlah spam reel", 150, 10, function(v)
-    Config.Power = v
-end)
-
-Section:NewSlider("Bite Delay", "Kecepatan ikan gigit", 2, 0, function(v)
-    Config.Delay = v
-end)
-
--- 5. WORLD & MISC TAB
-local World = Window:NewTab("Misc")
-local MSection = World:NewSection("Utility")
-
-MSection:NewToggle("Auto Sell All", "Jual ikan otomatis", function(v)
-    Config.AutoSell = v
-    task.spawn(function()
-        while Config.AutoSell do
-            Events.sell:InvokeServer()
-            task.wait(20)
-        end
-    end)
-end)
-
-MSection:NewButton("Instant Sell", "Jual sekarang", function()
-    Events.sell:InvokeServer()
-end)
-
-MSection:NewButton("FPS Optimizer", "Mengurangi lag", function()
-    settings().Rendering.QualityLevel = 1
-    for _, v in pairs(game:GetDescendants()) do
-        if v:IsA("BasePart") and not v.Parent:FindFirstChild("Humanoid") then
-            v.Material = Enum.Material.SmoothPlastic
-        end
-    end
-end)
-
-print("SlingerHub Full Loaded!")
+Fluent:Notify({
+    Title = "SlingerHub Premium",
+    Content = "Welcome Back, Owner. UI Loaded Successfully.",
+    Duration = 5
+})
