@@ -1,9 +1,9 @@
 --[[
-    SLINGERHUB V5.7 - BYPASS EDITION
+    SLINGERHUB V5.8 - BYPASS TOTAL (ANTI-ERROR)
     - UI: WindUI (Sesuai Permintaan)
     - Tab Main: Blatant, Instant Fishing, Auto Fish
     - Tab Teleport: Island Selection (Rolling) & Fast Buttons
-    - FIX: No more "Self Destructing" or "Nil Value" Errors.
+    - FIX: Menghapus Total Modul "Self-Destruct" & "Nil Value"
 ]]
 
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
@@ -33,7 +33,7 @@ local state = {
 ----- =======[ UI WINDOW ] =======
 -------------------------------------------
 local Window = WindUI:CreateWindow({
-    Title = "SlingerHub V5.7",
+    Title = "SlingerHub V5.8",
     Icon = "anchor",
     Author = "SlingerDev",
     Folder = "SlingerHub_Final_Fixed",
@@ -54,27 +54,30 @@ local function StartFishing()
     task.spawn(function()
         while state.AutoFish do
             pcall(function()
-                net["RE/EquipToolFromHotbar"]:FireServer(1)
-                
-                if state.Blatant then
-                    -- BLATANT: Double Cast (Melempar 2 Kail Sekaligus)
-                    task.spawn(function()
+                -- Langsung memanggil fungsi pancing tanpa modul tambahan (Fix Nil Value)
+                if net then
+                    net["RE/EquipToolFromHotbar"]:FireServer(1)
+                    
+                    if state.Blatant then
+                        -- BLATANT: Double Cast (Melempar 2 Kail Sekaligus)
+                        task.spawn(function()
+                            net["RF/ChargeFishingRod"]:InvokeServer(tick())
+                            net["RF/RequestFishingMinigameStarted"]:InvokeServer(1.28, 1)
+                        end)
+                        task.wait(0.05)
+                        task.spawn(function()
+                            net["RF/ChargeFishingRod"]:InvokeServer(tick())
+                            net["RF/RequestFishingMinigameStarted"]:InvokeServer(1.28, 1)
+                        end)
+                        task.wait(0.85) 
+                        for i = 1, 5 do net["RE/FishingCompleted"]:FireServer() end
+                    else
+                        -- NORMAL / INSTANT
                         net["RF/ChargeFishingRod"]:InvokeServer(tick())
-                        net["RF/RequestFishingMinigameStarted"]:InvokeServer(1.28, 1)
-                    end)
-                    task.wait(0.05)
-                    task.spawn(function()
-                        net["RF/ChargeFishingRod"]:InvokeServer(tick())
-                        net["RF/RequestFishingMinigameStarted"]:InvokeServer(1.28, 1)
-                    end)
-                    task.wait(0.85) 
-                    for i = 1, 5 do net["RE/FishingCompleted"]:FireServer() end
-                else
-                    -- NORMAL / INSTANT
-                    net["RF/ChargeFishingRod"]:InvokeServer(tick())
-                    net["RF/RequestFishingMinigameStarted"]:InvokeServer(1.2, 1)
-                    if state.InstantReel then task.wait(0.5) else task.wait(2.2) end
-                    net["RE/FishingCompleted"]:FireServer()
+                        net["RF/RequestFishingMinigameStarted"]:InvokeServer(1.2, 1)
+                        if state.InstantReel then task.wait(0.5) else task.wait(2.2) end
+                        net["RE/FishingCompleted"]:FireServer()
+                    end
                 end
             end)
             task.wait(0.2)
@@ -117,7 +120,6 @@ local locations = {
 local locationNames = {}
 for name, _ in pairs(locations) do table.insert(locationNames, name) end
 
--- Fitur Rolling Teleport (Dropdown)
 IslandSection:Dropdown({
     Title = "Select Island (Rolling Menu)",
     Values = locationNames,
@@ -129,14 +131,6 @@ IslandSection:Dropdown({
     end
 })
 
--- Tombol Cepat di Bawah Rolling
-IslandSection:Button({
-    Title = "Quick TP: Sisyphus Statue",
-    Callback = function()
-        LocalPlayer.Character.HumanoidRootPart.CFrame = locations["Sisyphus Statue"]
-    end
-})
-
 -------------------------------------------
 ----- =======[ UTILITY ] =======
 -------------------------------------------
@@ -145,6 +139,23 @@ local UtilSection = UtilityTab:Section({ Title = "Extra Tools", Icon = "star" })
 UtilSection:Toggle({
     Title = "Auto Sell All (60s)",
     Callback = function(v)
+        state.AutoSell = v
+        task.spawn(function()
+            while state.AutoSell do
+                if net then pcall(function() net["RF/SellAllItems"]:InvokeServer() end) end
+                task.wait(60)
+            end
+        end)
+    end
+})
+
+-- Anti-AFK
+LocalPlayer.Idled:Connect(function()
+    VirtualUser:CaptureController()
+    VirtualUser:ClickButton2(Vector2.new())
+end)
+
+WindUI:Notify({Title = "SlingerHub V5.8", Content = "Bypass Berhasil! Fitur Lengkap Siap Pakai."})
         state.AutoSell = v
         task.spawn(function()
             while state.AutoSell do
