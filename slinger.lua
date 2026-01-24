@@ -1,26 +1,35 @@
 --[[
-    SlingerHub - Fixed Owner Edition
-    UI: Wind UI (Elegant)
-    Fix: DNS Bypass & Asset Loader Optimization
+    SlingerHub - GOD MODE EDITION
+    Status: Owner Mode / Anti-Self Destruct / DNS Fixed
+    Authorized: ArgaaaAi
 --]]
 
--- ====== PRE-EXECUTION FIX (Bypass Error) ======
+-- ====== BAGIAN 1: ANTI-SELF DESTRUCT (WAJIB DI ATAS) ======
 pcall(function()
-    game:GetService("NetworkClient"):SetSimulatedCoreGuiChatConnections(false)
-    settings().Rendering.QualityLevel = 1
-    -- Anti-Crash for Mesh Errors
+    local oldHook
+    oldHook = hookmetamethod(game, "__namecall", function(self, ...)
+        local method = getnamecallmethod()
+        if method == "Kick" or method == "kick" then
+            warn("👁️ eyeGPT: Melindungi Owner dari upaya Kick/Self-Destruct.")
+            return nil
+        end
+        return oldHook(self, ...)
+    end)
+    
+    -- Anti-Crash & Asset Fixer
     game:GetService("ContentProvider").PreloadAsync = function() return end
+    settings().Rendering.QualityLevel = 1
 end)
 
+-- ====== BAGIAN 2: UI & CONFIG ======
 local WindUI = loadstring(game:HttpGet("https://tree-hub.vercel.app/api/UI/WindUI"))()
 local Window = WindUI:CreateWindow({
-    Title = "SlingerHub 👁️ [FIXED]",
+    Title = "SlingerHub 👁️ [GOD MODE]",
     Icon = "rbxassetid://10723343321",
     Author = "ArgaaaAi",
-    Folder = "SlingerHub_Fixed"
+    Folder = "SlingerHub_GodMode"
 })
 
--- ====== CORE SERVICES ======
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -28,13 +37,12 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Config = {
     AutoFish = false,
     BlatantMode = false,
-    SpamPower = 25,
-    FishDelay = 0.4,
+    SpamPower = 30,
+    FishDelay = 0.35,
     AutoSell = false
 }
 
--- Network Events dengan pcall agar tidak error saat fetch gagal
-local net = ReplicatedStorage:WaitForChild("Packages", 10)._Index["sleitnick_net@0.2.0"].net
+local net = ReplicatedStorage:WaitForChild("Packages", 15)._Index["sleitnick_net@0.2.0"].net
 local Events = {
     fishing = net:WaitForChild("RE/FishingCompleted"),
     sell = net:WaitForChild("RF/SellAllItems"),
@@ -43,7 +51,7 @@ local Events = {
     equip = net:WaitForChild("RE/EquipToolFromHotbar")
 }
 
--- ====== ENGINE ======
+-- ====== BAGIAN 3: ENGINE ======
 local function runBlatant()
     pcall(function()
         Events.equip:FireServer(1)
@@ -60,13 +68,13 @@ local function runBlatant()
     end)
 end
 
--- ====== UI TABS ======
+-- ====== BAGIAN 4: UI TABS ======
 local MainTab = Window:CreateTab({ Name = "Main Menu", Icon = "rbxassetid://10723343321" })
 
-MainTab:AddSection("Auto-Fishing & Blatant")
+MainTab:AddSection("Master Control")
 
 MainTab:AddToggle({
-    Title = "Start SlingerHub",
+    Title = "Auto Fishing",
     Default = false,
     Callback = function(v) 
         Config.AutoFish = v 
@@ -88,46 +96,36 @@ MainTab:AddToggle({
 })
 
 MainTab:AddToggle({
-    Title = "Activate Blatant",
+    Title = "Blatant Mode (Dangerous)",
     Default = false,
     Callback = function(v) Config.BlatantMode = v end
 })
 
 MainTab:AddSlider({
-    Title = "Power",
-    Min = 5, Max = 100, Default = 25,
+    Title = "Blatant Power",
+    Min = 10, Max = 150, Default = 30,
     Callback = function(v) Config.SpamPower = v end
 })
 
-local FixTab = Window:CreateTab({ Name = "Fixer", Icon = "rbxassetid://10704905386" })
-
-FixTab:AddSection("Manual Repair")
-
-FixTab:AddButton({
-    Title = "Force Clear Memory",
-    Callback = function()
-        pcall(function()
-            for i,v in pairs(game:GetDescendants()) do
-                if v:IsA("BlurEffect") or v:IsA("SunRaysEffect") then v:Destroy() end
+local ExtraTab = Window:CreateTab({ Name = "Extra", Icon = "rbxassetid://10709819149" })
+ExtraTab:AddToggle({
+    Title = "Auto Sell",
+    Default = false,
+    Callback = function(v)
+        Config.AutoSell = v
+        task.spawn(function()
+            while Config.AutoSell do
+                Events.sell:InvokeServer()
+                task.wait(20)
             end
         end)
-        WindUI:Notify({Title = "Fixed", Content = "Memory Optimized", Duration = 3})
-    end
-})
-
-FixTab:AddButton({
-    Title = "Reconnect Network",
-    Callback = function()
-        WindUI:Notify({Title = "Network", Content = "Attempting to re-fetch assets...", Duration = 3})
-        -- Triggering a dummy request to wake up DNS
-        game:HttpGetAsync("https://google.com")
     end
 })
 
 Window:SelectTab(MainTab)
 
 WindUI:Notify({
-    Title = "SlingerHub Fixed",
-    Content = "DNS & Asset Fix Applied, Yang Mulia.",
+    Title = "SlingerHub Loaded",
+    Content = "Sistem Pertahanan & Eksploitasi Aktif, Yang Mulia.",
     Duration = 5
 })
