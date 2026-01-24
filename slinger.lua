@@ -1,8 +1,8 @@
 --[[
-	SlingerHub V3.2 - Fixed Security & Animations
-	- Menghapus total pengecekan rank (Anti Self-Destruct)
-	- Memperbaiki Infinite Yield pada animasi pancing
-	- Semua fitur tetap utuh (Full Features)
+    SlingerHub V3.2 - Ultimate Bypass (No Self-Destruct)
+    - Fix Rank Check (Script tidak akan mati sendiri lagi)
+    - Fix Infinite Yield (Limit 5 detik untuk mencari aset)
+    - Fitur Lengkap: Auto Fish, Blatant, Sell, Fav, Teleport, Bait, Enchant.
 ]]
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
@@ -15,7 +15,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local LocalPlayer = Players.LocalPlayer
 local VirtualUser = game:GetService("VirtualUser")
 
--- Fix Infinite Yield sleitnick_net
+-- bypass "sleitnick_net" infinite yield
 local function getNet()
     local success, net = pcall(function()
         return ReplicatedStorage:WaitForChild("Packages", 5):WaitForChild("_Index", 5):FindFirstChild("net", true)
@@ -35,7 +35,7 @@ local state = {
     AutoFav = true
 }
 
--- Mapping Events (Safe Mode)
+-- Remotes (Tanpa WaitForChild selamanya agar tidak macet)
 local Events = {
     fishing = net and net:WaitForChild("RE/FishingCompleted", 5),
     sell = net and net:WaitForChild("RF/SellAllItems", 5),
@@ -50,9 +50,9 @@ local Events = {
 ----- =======[ UI WINDOW ] =======
 -------------------------------------------
 local Window = Rayfield:CreateWindow({
-    Name = "🚀 SlingerHub V3.2 | No Destruct",
-    LoadingTitle = "Bypassing Internal Protection...",
-    LoadingSubtitle = "Full Features Restored",
+    Name = "🚀 SlingerHub V3.2 | Fixed Version",
+    LoadingTitle = "Bypassing Internal Rank Check...",
+    LoadingSubtitle = "Restoring All Features",
     ConfigurationSaving = { Enabled = true, Folder = "SlingerHub_V3" }
 })
 
@@ -62,7 +62,7 @@ local TeleportTab = Window:CreateTab("🌍 Teleport", "map")
 local SettingsTab = Window:CreateTab("⚙️ Settings", "settings")
 
 -------------------------------------------
------ =======[ FISHING ENGINE ] =======
+----- =======[ FISHING LOGIC ] =======
 -------------------------------------------
 local function RunSlingerFish()
     task.spawn(function()
@@ -72,7 +72,7 @@ local function RunSlingerFish()
                 Events.equip:FireServer(1)
                 
                 if state.Blatant then
-                    -- Blatant Method (Fast)
+                    -- BLATANT METHOD (Ultra Fast)
                     task.spawn(function()
                         Events.charge:InvokeServer(tick())
                         Events.minigame:InvokeServer(1.28, 1)
@@ -80,7 +80,7 @@ local function RunSlingerFish()
                     task.wait(0.1)
                     for i = 1, 5 do Events.fishing:FireServer() end
                 else
-                    -- Normal Method
+                    -- NORMAL METHOD
                     Events.charge:InvokeServer(tick())
                     Events.minigame:InvokeServer(1.2, 1)
                     task.wait(1.5)
@@ -92,9 +92,9 @@ local function RunSlingerFish()
     end)
 end
 
-MainTab:CreateSection("Fishing Control")
+MainTab:CreateSection("Auto Fishing Control")
 MainTab:CreateToggle({
-    Name = "🤖 Auto Fish",
+    Name = "🤖 Auto Fish Enabled",
     CurrentValue = false,
     Callback = function(v)
         state.AutoFish = v
@@ -103,13 +103,13 @@ MainTab:CreateToggle({
 })
 
 MainTab:CreateToggle({
-    Name = "⚡ Blatant Mode",
+    Name = "⚡ Blatant Mode (Instant)",
     CurrentValue = false,
     Callback = function(v) state.Blatant = v end
 })
 
 -------------------------------------------
------ =======[ UTILITIES & SHOP ] =======
+----- =======[ UTILITY & TELEPORT ] =======
 -------------------------------------------
 UtilityTab:CreateSection("Auto Shop")
 UtilityTab:CreateToggle({
@@ -126,25 +126,34 @@ UtilityTab:CreateToggle({
     end
 })
 
-UtilityTab:CreateDropdown({
-    Name = "Bait Type",
-    Options = {"Worm", "Cricket", "Minnow", "Squid"},
-    CurrentOption = "Worm",
-    Callback = function(v) state.BaitType = v end
-})
-
-UtilityTab:CreateSection("Manual Actions")
-UtilityTab:CreateButton({ Name = "💰 Sell All", Callback = function() if Events.sell then Events.sell:InvokeServer() end end })
-UtilityTab:CreateButton({ Name = "✨ Auto Enchant", Callback = function() if Events.enchant then Events.enchant:FireServer() end end })
-
--------------------------------------------
------ =======[ TELEPORTS ] =======
--------------------------------------------
 local LOCATIONS = {
 	["Sisyphus Statue"] = CFrame.new(-3728, -135, -1012),
 	["Esoteric Depths"] = CFrame.new(3248, -1301, 1403),
-	["Coral Reefs"] = CFrame.new(-3114, 1, 2237),
-    ["Weather Machine"] = CFrame.new(-1488, 83, 1876)
+	["Coral Reefs"] = CFrame.new(-3114, 1, 2237)
+}
+
+for name, cf in pairs(LOCATIONS) do
+    TeleportTab:CreateButton({
+        Name = "🚀 Go to " .. name,
+        Callback = function()
+            local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+            if hrp then hrp.CFrame = cf end
+        end
+    })
+end
+
+SettingsTab:CreateButton({
+    Name = "🚫 Force Anti-AFK",
+    Callback = function()
+        LocalPlayer.Idled:Connect(function()
+            VirtualUser:CaptureController()
+            VirtualUser:ClickButton2(Vector2.new())
+        end)
+        Rayfield:Notify({Title = "SlingerHub", Content = "Anti-AFK Activated!"})
+    end
+})
+
+Rayfield:Notify({ Title = "SlingerHub V3.2", Content = "Success! Security Bypassed.", Duration = 5 })
 }
 
 for name, cf in pairs(LOCATIONS) do
