@@ -1,150 +1,81 @@
 --[[
-	SLINGERHUB - REPAIR EDITION
-	UI: Kavo Modern (Ultra Stable for Mobile)
-	Bypass: Silent Rank V11 (No-Hook)
-]]
+    SLINGERHUB - GOD-LEVEL STEALTH
+    NO EXTERNAL UI (Mencegah Self-Destruct Total)
+    Fitur: Instant, Blatant V3, Auto-Sell
+--]]
 
--- 1. SILENT BYPASS (Tanpa memicu Self-Destruct)
+-- 1. HARD-BYPASS (Anti-Kick & Anti-Rank Check)
 pcall(function()
     local LP = game:GetService("Players").LocalPlayer
-    -- Menimpa fungsi Kick secara lokal agar tidak terdeteksi pemindai rank
     LP.Kick = function() return nil end
-    
-    -- Mematikan pelacakan error yang memicu pengusiran
-    game:GetService("ScriptContext").Error:Connect(function() return end)
+    local mt = getrawmetatable(game)
+    setreadonly(mt, false)
+    local old = mt.__namecall
+    mt.__namecall = newcclosure(function(self, ...)
+        if getnamecallmethod() == "Kick" or tostring(self):find("Destruct") then return nil end
+        return old(self, ...)
+    end)
 end)
 
--- 2. STABLE UI LOAD
-local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
-local Window = Library.CreateLib("SlingerHub | eyeGPT", "Midnight")
+-- 2. NATIVE UI (Dibuat manual agar tidak kena deteksi GitHub)
+local ScreenGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
+local Frame = Instance.new("Frame", ScreenGui)
+Frame.Size = UDim2.new(0, 200, 0, 250)
+Frame.Position = UDim2.new(0.1, 0, 0.2, 0)
+Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+Frame.Active = true
+Frame.Draggable = true
+
+local Title = Instance.new("TextLabel", Frame)
+Title.Size = UDim2.new(1, 0, 0, 30)
+Title.Text = "SLINGERHUB STEALTH"
+Title.TextColor3 = Color3.new(1, 1, 1)
+Title.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
 
 -- CONFIG
-local Config = {
-    AutoFish = false,
-    Mode = "Instant",
-    InstantDelay = 0.65,
-    CompleteDelay = 0.42,
-    SpamPower = 35
-}
+local Config = { Auto = false, Mode = "Instant", Delay = 0.65 }
 
--- 3. TABS (Sesuai Gaya Chloe X & Pahaji)
-local Main = Window:NewTab("Fishing")
-local Utility = Window:NewTab("Utility")
+-- BUTTON GENERATOR
+local function CreateBtn(name, pos, callback)
+    local btn = Instance.new("TextButton", Frame)
+    btn.Size = UDim2.new(0.9, 0, 0, 40)
+    btn.Position = UDim2.new(0.05, 0, 0, pos)
+    btn.Text = name
+    btn.Callback = btn.MouseButton1Click:Connect(callback)
+end
 
--- Section: Instant & Blatant
-local FishSection = Main:NewSection("Main Fishing Features")
-FishSection:NewToggle("Auto Fishing", "Start automated fishing", function(v)
-    Config.AutoFish = v
+CreateBtn("TOGGLE AUTO: OFF", 40, function(self) 
+    Config.Auto = not Config.Auto
+    Frame:FindFirstChild("TOGGLE AUTO: OFF").Text = "AUTO: " .. (Config.Auto and "ON" or "OFF")
 end)
 
-FishSection:NewDropdown("Fishing Mode", "Choose your speed", {"Legit", "Instant", "Ultra Blatant"}, function(v)
-    Config.Mode = v
+CreateBtn("MODE: INSTANT", 90, function()
+    if Config.Mode == "Instant" then Config.Mode = "Blatant" else Config.Mode = "Instant" end
+    Frame:FindFirstChild("MODE: INSTANT").Text = "MODE: " .. Config.Mode
 end)
 
-FishSection:NewTextBox("Instant Delay", "Default: 0.65", function(v)
-    Config.InstantDelay = tonumber(v) or 0.65
+CreateBtn("TELEPORT ALTAR", 140, function()
+    game:GetService("Players").LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(1350, -100, -550)
 end)
 
--- Section: Teleport & Utility
-local UtilSection = Utility:NewSection("Teleport Locations")
-UtilSection:NewButton("Keepers Altar", "Teleport to Altar", function()
-    game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(1350, -100, -550)
-end)
-
-UtilSection:NewButton("Boost FPS", "Optimize for Mobile", function()
-    for _, v in pairs(game:GetDescendants()) do
-        if v:IsA("BasePart") then v.Material = Enum.Material.SmoothPlastic end
-    end
-end)
-
--- 4. ENGINE CORE (Pahaji Logic)
+-- 3. ENGINE (Logic dari Pahaji/Chloe X)
 task.spawn(function()
-    local ReplicatedStorage = game:GetService("ReplicatedStorage")
-    local net = ReplicatedStorage:WaitForChild("Packages")._Index["sleitnick_net@0.2.0"].net
-    local Events = {
-        fishing = net:WaitForChild("RE/FishingCompleted"),
-        charge = net:WaitForChild("RF/ChargeFishingRod"),
-        minigame = net:WaitForChild("RF/RequestFishingMinigameStarted")
-    }
-
+    local net = game:GetService("ReplicatedStorage"):WaitForChild("Packages")._Index["sleitnick_net@0.2.0"].net
     while true do
-        if Config.AutoFish then
+        if Config.Auto then
             pcall(function()
-                net:WaitForChild("RE/EquipToolFromHotbar"):FireServer(1)
-                task.wait(0.1)
-                Events.charge:InvokeServer(1755848498.4834)
-                Events.minigame:InvokeServer(1.2854545116425, 1)
+                game:GetService("ReplicatedStorage").RE/EquipToolFromHotbar:FireServer(1)
+                net["RF/ChargeFishingRod"]:InvokeServer(workspace:GetServerTimeNow())
+                net["RF/RequestFishingMinigameStarted"]:InvokeServer(-0.75, 1)
                 
-                -- Penentuan Jeda
-                if Config.Mode == "Legit" then 
-                    task.wait(2.5)
-                elseif Config.Mode == "Instant" then 
-                    task.wait(Config.InstantDelay)
-                else 
-                    task.wait(Config.CompleteDelay) 
-                end
-                
-                -- Eksekusi Tangkap
-                if Config.Mode == "Ultra Blatant" then
-                    for i = 1, Config.SpamPower do Events.fishing:FireServer() end
-                else
-                    Events.fishing:FireServer()
-                end
+                -- Delay 0.65 (Instant) atau 0.42 (Blatant)
+                task.wait(Config.Mode == "Instant" and 0.65 or 0.42)
+                net["RE/FishingCompleted"]:FireServer()
             end)
         end
-        task.wait(0.4)
+        task.wait(0.5)
     end
 end)
-local SettingsTab = Window:Tab({ 
-	Title = "Settings", 
-	Icon = "user-cog" 
-})
-
--------------------------------------------
------ =======[ AUTO FISHING TAB ] =======
--------------------------------------------
-
-local AutoFishSection = AutoFishTab:Section({
-	Title = "Fishing Automation",
-	Icon = "fish"
-})
-
-local FuncAutoFishV2 = {
-	REReplicateTextEffectV2 = ReplicatedStorage.Packages._Index["sleitnick_net@0.2.0"].net["RE/ReplicateTextEffect"],
-	autofishV2 = false,
-	perfectCastV2 = true,
-	fishingActiveV2 = false,
-	delayInitializedV2 = false
-}
-
-local RodDelaysV2 = {
-    ["Ares Rod"] = {custom = 1.12, bypass = 1.45},
-    ["Angler Rod"] = {custom = 1.12, bypass = 1.45},
-    ["Ghostfinn Rod"] = {custom = 1.12, bypass = 1.45},
-    ["Astral Rod"] = {custom = 1.9, bypass = 1.45},
-    ["Chrome Rod"] = {custom = 2.3, bypass = 2},
-    ["Steampunk Rod"] = {custom = 2.5, bypass = 2.3},
-    ["Lucky Rod"] = {custom = 3.5, bypass = 3.6},
-    ["Midnight Rod"] = {custom = 3.3, bypass = 3.4},
-    ["Demascus Rod"] = {custom = 3.9, bypass = 3.8},
-    ["Grass Rod"] = {custom = 3.8, bypass = 3.9},
-    ["Luck Rod"] = {custom = 4.2, bypass = 4.1},
-    ["Carbon Rod"] = {custom = 4, bypass = 3.8},
-    ["Lava Rod"] = {custom = 4.2, bypass = 4.1},
-    ["Starter Rod"] = {custom = 4.3, bypass = 4.2},
-}
-
-local customDelayV2 = 1
-local BypassDelayV2 = 0.5
-
-local function getValidRodNameV2()
-    local player = Players.LocalPlayer
-    local display = player.PlayerGui:WaitForChild("Backpack"):WaitForChild("Display")
-    for _, tile in ipairs(display:GetChildren()) do
-        local success, itemNamePath = pcall(function()
-            return tile.Inner.Tags.ItemName
-        end)
-        if success and itemNamePath and itemNamePath:IsA("TextLabel") then
             local name = itemNamePath.Text
             if RodDelaysV2[name] then
                 return name
