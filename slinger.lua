@@ -83,4 +83,70 @@ Tabs.Players:AddSlider("JumpPower", { Title = "Jump", Default = 50, Min = 50, Ma
 
 -- --- TAB: EXCLUSIVE ---
 Tabs.Exclusive:AddSection("Fishing Mode Selection")
-Tabs.Exclusive:AddDropdown("
+Tabs.Exclusive:AddDropdown("FishingMode", {
+    Title = "Select Fishing Mode",
+    Values = {"Legit", "Instant", "Ultra Blatant V3"},
+    Default = "Legit",
+    Callback = function(Value) Config.FishingMode = Value end
+})
+
+Tabs.Exclusive:AddSection("Mode Configurations")
+Tabs.Exclusive:AddInput("InstantDelay", {Title = "Instant Finish Delay", Default = "0.65", Callback = function(v) Config.CompleteDelay = tonumber(v) end})
+Tabs.Exclusive:AddInput("LegitDelay", {Title = "Legit Wait Time", Default = "2.5", Callback = function(v) Config.LegitWait = tonumber(v) end})
+Tabs.Exclusive:AddInput("CDelay", {Title = "Complete Delay (Blatant)", Default = "0.42", Callback = function(v) Config.CompleteDelay = tonumber(v) end})
+Tabs.Exclusive:AddInput("CanDelay", {Title = "Cancel Delay", Default = "0.3", Callback = function(v) Config.CancelDelay = tonumber(v) end})
+
+-- --- TAB: TELEPORT ---
+for category, locs in pairs(LOCATIONS) do
+    Tabs.Teleport:AddSection(category)
+    for name, cf in pairs(locs) do
+        Tabs.Teleport:AddButton({Title = name, Callback = function() game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = cf end})
+    end
+end
+
+-- ====== [5] LOGIC ENGINE ======
+task.spawn(function()
+    local ReplicatedStorage = game:GetService("ReplicatedStorage")
+    local net = ReplicatedStorage:WaitForChild("Packages", 25)._Index["sleitnick_net@0.2.0"].net
+    local Events = {
+        fishing = net:WaitForChild("RE/FishingCompleted"),
+        charge = net:WaitForChild("RF/ChargeFishingRod"),
+        minigame = net:WaitForChild("RF/RequestFishingMinigameStarted"),
+        equip = net:WaitForChild("RE/EquipToolFromHotbar"),
+        sell = net:WaitForChild("RF/SellAllItems")
+    }
+
+    while true do
+        if Options.AutoFish.Value then
+            pcall(function()
+                if Options.AutoEquip.Value then Events.equip:FireServer(1) end
+                task.wait(Config.ReCastDelay)
+                Events.charge:InvokeServer(1755848498.4834)
+                Events.minigame:InvokeServer(1.2854545116425, 1)
+                
+                if Config.FishingMode == "Legit" then
+                    task.wait(Config.LegitWait)
+                    Events.fishing:FireServer()
+                elseif Config.FishingMode == "Instant" then
+                    task.wait(Config.CompleteDelay)
+                    Events.fishing:FireServer()
+                elseif Config.FishingMode == "Ultra Blatant V3" then
+                    task.wait(Config.CompleteDelay)
+                    for i = 1, Config.SpamPower do Events.fishing:FireServer() end
+                end
+            end)
+            task.wait(Config.CancelDelay)
+        end
+        task.wait(0.1)
+    end
+end)
+
+task.spawn(function()
+    while true do
+        if Options.AutoSell.Value then pcall(function() game:GetService("ReplicatedStorage").Packages._Index["sleitnick_net@0.2.0"].net:WaitForChild("RF/SellAllItems"):InvokeServer() end) end
+        task.wait(Config.SellDelay)
+    end
+end)
+
+Window:SelectTab(Tabs.Main)
+Fluent:Notify({Title = "SlingerHub", Content = "Semua fitur telah digabungkan. Selamat memancing, Owner!", Duration = 5})
