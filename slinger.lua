@@ -1,87 +1,85 @@
-local WindUI = loadstring(game:HttpGet("https://tree-hub.vercel.app/api/main/windui"))()
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
+-- Tema Ocean Blue
+local Window = Library.CreateLib("Fish It! - Blue Ocean", "Ocean")
 
-local Window = WindUI:CreateWindow({
-    Title = "Fish It!",
-    Icon = "rbxassetid://10723343321", -- Icon ikan
-    Author = "Blue Edition",
-    Folder = "FishItConfig"
-})
+local MainTab = Window:NewTab("Main")
+local MainSection = MainTab:NewSection("Auto Farm")
 
--- TEMA BIRU OCEAN
-Window:EditTheme({
-    AccentColor = Color3.fromRGB(0, 120, 215),
-    OutlineColor = Color3.fromRGB(30, 30, 40),
-    BackgroundColor = Color3.fromRGB(15, 15, 20)
-})
-
-local MainTab = Window:Tab({ Title = "Main", Icon = "home" })
-local MiscTab = Window:Tab({ Title = "Misc", Icon = "layers" })
-
--- [ FITUR DARI SCRIPT ASLI ] --
-
-MainTab:Toggle({
-    Title = "Auto Fish",
-    Default = false,
-    Callback = function(v)
-        _G.AutoFish = v
-        spawn(function()
-            while _G.AutoFish do
-                task.wait(0.1)
-                -- Logic: Cast Rod & Catch
-                local args = { [1] = "Cast" }
-                game:GetService("ReplicatedStorage").Events.Fishing:FireServer(unpack(args))
-                
-                -- Auto Reel (Logic dari raw link)
-                game:GetService("ReplicatedStorage").Events.Fishing:FireServer("Reel")
+MainSection:NewToggle("Auto Fish", "Mancing otomatis", function(v)
+    _G.AutoFish = v
+    spawn(function()
+        while _G.AutoFish do
+            task.wait(0.5)
+            local remote = game:GetService("ReplicatedStorage"):FindFirstChild("Events")
+            if remote and remote:FindFirstChild("Fishing") then
+                remote.Fishing:FireServer("Cast")
+                task.wait(0.8)
+                remote.Fishing:FireServer("Reel")
             end
-        end)
-    end
-})
-
-MainTab:Toggle({
-    Title = "Auto Sell Fish",
-    Default = false,
-    Callback = function(v)
-        _G.AutoSell = v
-        spawn(function()
-            while _G.AutoSell do
-                task.wait(2)
-                game:GetService("ReplicatedStorage").Events.Sell:FireServer()
-            end
-        end)
-    end
-})
-
-MainTab:Button({
-    Title = "Unlock All Rods (Client)",
-    Callback = function()
-        -- Logic dari raw rscripts.net
-        for i,v in pairs(game:GetService("Players").LocalPlayer.PlayerGui.Main.Rods:GetChildren()) do
-            if v:IsA("Frame") then v.Visible = true end
         end
-    end
-})
+    end)
+end)
 
-MiscTab:Slider({
-    Title = "WalkSpeed",
-    Min = 16,
-    Max = 200,
-    Default = 16,
-    Callback = function(v)
-        game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = v
-    end
-})
+MainSection:NewToggle("Auto Sell", "Jual ikan otomatis", function(v)
+    _G.AutoSell = v
+    spawn(function()
+        while _G.AutoSell do
+            task.wait(5)
+            local remote = game:GetService("ReplicatedStorage"):FindFirstChild("Events")
+            if remote and remote:FindFirstChild("Sell") then
+                remote.Sell:FireServer()
+            end
+        end
+    end)
+end)
 
-MiscTab:Button({
-    Title = "Teleport to Ocean",
-    Callback = function()
-        game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(150, 20, 300) -- Koordinat contoh ocean
-    end
-})
+local TPTab = Window:NewTab("Teleport")
+local TPSection = TPTab:NewSection("Rolling")
 
--- Notifikasi kalau sudah siap
-WindUI:Notify({
-    Title = "Success!",
-    Content = "Script Fish It! Blue Wind UI Loaded (Keyless)",
-    Duration = 5
-})
+TPSection:NewToggle("Island Rolling", "Pindah pulau tiap 10 detik", function(v)
+    _G.IslandRolling = v
+    local Islands = {
+        CFrame.new(150, 20, 300),
+        CFrame.new(-200, 20, 450),
+        CFrame.new(500, 25, -100)
+    }
+    spawn(function()
+        local i = 1
+        while _G.IslandRolling do
+            if not _G.IslandRolling then break end
+            game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = Islands[i]
+            i = i % #Islands + 1
+            task.wait(10)
+        end
+    end)
+end)
+
+TPSection:NewToggle("Player Rolling", "Pindah ke player lain", function(v)
+    _G.PlayerRolling = v
+    spawn(function()
+        while _G.PlayerRolling do
+            for _, p in pairs(game.Players:GetPlayers()) do
+                if not _G.PlayerRolling then break end
+                if p ~= game.Players.LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                    game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = p.Character.HumanoidRootPart.CFrame
+                    task.wait(5)
+                end
+            end
+            task.wait(1)
+        end
+    end)
+end)
+
+local MiscTab = Window:NewTab("Misc")
+local MiscSection = MiscTab:NewSection("Player")
+
+MiscSection:NewSlider("WalkSpeed", "Lari kencang", 200, 16, function(s)
+    game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = s
+end)
+
+-- Anti AFK (Tanam di background, gak pake UI)
+local VirtualUser = game:GetService("VirtualUser")
+game.Players.LocalPlayer.Idled:Connect(function()
+    VirtualUser:CaptureController()
+    VirtualUser:ClickButton2(Vector2.new())
+end)
