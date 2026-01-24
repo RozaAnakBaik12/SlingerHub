@@ -1,78 +1,106 @@
 --[[
-    SLINGERHUB - ORION MODERN EDITION
-    UI: Orion Library (Minimalist & Stable)
-    Status: Supreme Owner / Anti-Self Destruct
+    SLINGERHUB - UNBREAKABLE EDITION
+    Security: Anti-Tamper V4 (Root Bypass)
+    UI: Orion Library
 --]]
 
--- ====== [1] ANTI-KICK & SELF DESTRUCT BYPASS ======
+-- ====== [1] ROOT BYPASS (WAJIB PALING ATAS) ======
 pcall(function()
-    local mt = getrawmetatable(game)
-    setreadonly(mt, false)
-    local old = mt.__namecall
-    mt.__namecall = newcclosure(function(self, ...)
-        local method = getnamecallmethod()
-        if method == "Kick" or method == "kick" then 
-            warn("👁️ eyeGPT: Blocked attempt to kick the Owner.")
-            return nil 
-        end
-        return old(self, ...)
+    -- Mematikan fungsi Kick secara global
+    local LocalPlayer = game:GetService("Players").LocalPlayer
+    local oldKick
+    oldKick = hookfunction(LocalPlayer.Kick, function(self, ...)
+        warn("👁️ eyeGPT: Upaya Self-Destruct/Kick telah DIMATIKAN secara paksa.")
+        return nil
     end)
+    
+    -- Memblokir Remote Event penghancur diri
+    local oldNamecall
+    oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
+        local method = getnamecallmethod()
+        if method == "Kick" or method == "kick" or tostring(self):find("Destruct") then
+            return nil
+        end
+        return oldNamecall(self, ...)
+    end)
+    
+    -- Membersihkan memori untuk mencegah deteksi
+    setfflag("AbuseReportScreenshot", "False")
 end)
 
 -- ====== [2] INITIALIZE ORION UI ======
 local OrionLib = loadstring(game:HttpGet(('https://raw.githubusercontent.com/shlexware/Orion/main/source')))()
 local Window = OrionLib:MakeWindow({
-    Name = "SlingerHub | Team eyeGPT", 
+    Name = "SlingerHub 👁️ | SUPREME", 
     HidePremium = false, 
-    SaveConfig = true, 
-    ConfigFolder = "SlingerHub_Orion"
+    SaveConfig = false, 
+    IntroText = "Authorized for Owner"
 })
 
--- ====== [3] CONFIGURATION ======
+-- ====== [3] CONFIG & LOGIC ======
 local Config = {
     AutoFish = false,
-    AutoEquip = true,
     FishingMode = "Legit",
     CompleteDelay = 0.42,
-    InstantDelay = 0.65,
     CancelDelay = 0.3,
-    LegitWait = 2.5,
-    SpamPower = 35,
-    AutoSell = false
+    SpamPower = 35
 }
 
--- ====== [4] TABS SETUP (Pahaji Hub Style) ======
+-- TABS (Identik dengan Pahaji Style)
 local MainTab = Window:MakeTab({Name = "Main", Icon = "rbxassetid://4483345998"})
 local PlayerTab = Window:MakeTab({Name = "Players", Icon = "rbxassetid://4483345998"})
 local ExclusiveTab = Window:MakeTab({Name = "Exclusive", Icon = "rbxassetid://4483345998"})
-local TeleportTab = Window:MakeTab({Name = "Teleport", Icon = "rbxassetid://4483345998"})
 
--- --- TAB: MAIN (Automation) ---
-MainTab:AddSection({Name = "Fishing Automation"})
+-- --- TAB: EXCLUSIVE (Fitur Utama Anda) ---
+ExclusiveTab:AddSection({Name = "Ultra Blatant V3"})
+ExclusiveTab:AddDropdown({
+    Name = "Mode Selection",
+    Default = "Legit",
+    Options = {"Legit", "Instant", "Ultra Blatant V3"},
+    Callback = function(v) Config.FishingMode = v end
+})
+
+ExclusiveTab:AddTextbox({
+    Name = "Complete Delay",
+    Default = "0.42",
+    Callback = function(v) Config.CompleteDelay = tonumber(v) or 0.42 end
+})
+
+-- --- TAB: MAIN ---
 MainTab:AddToggle({
     Name = "Auto Fishing",
     Default = false,
     Callback = function(v) Config.AutoFish = v end
 })
-MainTab:AddToggle({
-    Name = "Auto Equip Rod",
-    Default = true,
-    Callback = function(v) Config.AutoEquip = v end
-})
-MainTab:AddToggle({
-    Name = "Auto Sell All",
-    Default = false,
-    Callback = function(v) Config.AutoSell = v end
-})
 
--- --- TAB: PLAYERS (Movement) ---
-PlayerTab:AddSection({Name = "Character Mods"})
-PlayerTab:AddSlider({
-    Name = "WalkSpeed",
-    Min = 16, Max = 200, Default = 18,
-    Increment = 1, ValueName = "Speed",
-    Callback = function(v) pcall(function() game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = v end) end
-})
-PlayerTab:AddSlider({
-    Name = "JumpPower",
-    Min = 50, Max =
+-- ====== [4] MESIN PANCING ======
+task.spawn(function()
+    local ReplicatedStorage = game:GetService("ReplicatedStorage")
+    local net = ReplicatedStorage:WaitForChild("Packages")._Index["sleitnick_net@0.2.0"].net
+    local Events = {
+        fishing = net:WaitForChild("RE/FishingCompleted"),
+        charge = net:WaitForChild("RF/ChargeFishingRod"),
+        minigame = net:WaitForChild("RF/RequestFishingMinigameStarted")
+    }
+
+    while true do
+        if Config.AutoFish then
+            pcall(function()
+                Events.charge:InvokeServer(1755848498.4834)
+                Events.minigame:InvokeServer(1.2854545116425, 1)
+                
+                if Config.FishingMode == "Legit" then task.wait(2.5) 
+                else task.wait(Config.CompleteDelay) end
+                
+                if Config.FishingMode == "Ultra Blatant V3" then
+                    for i = 1, Config.SpamPower do Events.fishing:FireServer() end
+                else
+                    Events.fishing:FireServer()
+                end
+            end)
+        end
+        task.wait(Config.CancelDelay)
+    end
+end)
+
+OrionLib:Init()
