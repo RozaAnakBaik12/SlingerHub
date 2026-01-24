@@ -1,84 +1,49 @@
 --[[
-	SLINGERHUB - DUPE ONLY (SIMPLE UI)
-	Bypass: Silent Stealth V12
-	Fitur: Hanya Packet Multiplier (Dupe)
+    SLINGERHUB - INVENTORY EXPERIMENT
+    Metode: Remote Replication (Mencoba menggandakan item di tas)
+    Risiko: SANGAT TINGGI (Dapat memicu Self-Destruct)
 ]]
 
--- 1. BYPASS DASAR
-pcall(function()
-    game:GetService("Players").LocalPlayer.Kick = function() return nil end
-end)
-
--- 2. LOAD UI SIMPLE
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
 
 local Window = WindUI:CreateWindow({
-    Title = "SlingerHub Dupe",
-    Icon = "copy",
+    Title = "SlingerHub - Inv Dupe",
+    Icon = "package",
     Author = "eyeGPT",
-    Folder = "SlingerHub_Dupe",
-    Size = UDim2.fromOffset(350, 300), -- Ukuran kecil & simple
+    Folder = "SlingerHub_Inv",
+    Size = UDim2.fromOffset(350, 250),
     Theme = "Indigo"
 })
 
--- CONFIG
-local Config = {
-    DupeActive = false,
-    Power = 5,
-    Delay = 0.8
-}
+local Main = Window:Tab({ Title = "Inventory", Icon = "archive" })
+local Section = Main:Section({ Title = "Experimental Dupe" })
 
--- 3. UI LAYOUT
-local Main = Window:Tab({ Title = "Dupe", Icon = "box" })
-local Section = Main:Section({ Title = "Fish Multiplier" })
-
-Section:Toggle({
-    Title = "Enable Dupe",
-    Content = "Gandakan hasil tangkapan ikan",
-    Callback = function(v) Config.DupeActive = v end
-})
-
-Section:Slider({
-    Title = "Dupe Power",
-    Min = 1,
-    Max = 100,
-    Default = 5,
-    Callback = function(v) Config.Power = v end
-})
-
-Section:Input({
-    Title = "Safety Delay",
-    Placeholder = "0.8",
-    Callback = function(v) Config.Delay = tonumber(v) or 0.8 end
-})
-
--- 4. DUPE ENGINE (Pahaji/Chloe Style Optimized)
-task.spawn(function()
-    local ReplicatedStorage = game:GetService("ReplicatedStorage")
-    local net = ReplicatedStorage:WaitForChild("Packages")._Index["sleitnick_net@0.2.0"].net
-    local finish = net:WaitForChild("RE/FishingCompleted")
-    local charge = net:WaitForChild("RF/ChargeFishingRod")
-    local mini = net:WaitForChild("RF/RequestFishingMinigameStarted")
-
-    while true do
-        if Config.DupeActive then
-            pcall(function()
-                -- Start
-                charge:InvokeServer(workspace:GetServerTimeNow())
-                task.wait(0.2)
-                mini:InvokeServer(-0.75, 1)
-                
-                -- Catch Delay (Penting agar rank tidak deteksi)
-                task.wait(Config.Delay)
-                
-                -- Packet Spam (The Dupe)
-                for i = 1, Config.Power do
-                    finish:FireServer()
-                end
-            end)
+-- Fungsi untuk mencoba dupe via Remote
+local function TryInventoryDupe()
+    pcall(function()
+        local ReplicatedStorage = game:GetService("ReplicatedStorage")
+        local net = ReplicatedStorage:WaitForChild("Packages")._Index["sleitnick_net@0.2.0"].net
+        
+        -- Mencoba memicu pengiriman data item berkali-kali ke server
+        -- Teknik ini menargetkan fungsi penyimpanan item
+        for i = 1, 5 do
+            net["RE/UpdateInventory"]:FireServer() -- Menembak remote update secara paksa
         end
-        task.wait(1.5) -- Cooldown pancingan
-    end
-end)
+    end)
+end
 
-WindUI:Notify({Title = "SlingerHub", Content = "Dupe Only Loaded!", Duration = 3})
+Section:Button({
+    Title = "Execute Inv Dupe",
+    Content = "Klik untuk mencoba penggandaan tas",
+    Callback = function()
+        WindUI:Notify({Title = "Processing", Content = "Mencoba sinkronisasi data...", Duration = 2})
+        TryInventoryDupe()
+    end
+})
+
+Section:Paragraph({
+    Title = "Catatan Keamanan",
+    Content = "Jika terjadi 'Self Destruct', segera kurangi penggunaan fitur ini dan kembali ke Dupe Pancing."
+})
+
+WindUI:Init()
