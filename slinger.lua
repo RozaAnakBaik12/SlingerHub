@@ -1,102 +1,100 @@
---[[ 
-    eyeGPT - BLATANT MODULE EVOLUTION (V1-V3)
-    Target: Lynx Hub Blatant Series
-    Status: ROOT EXTRACTION COMPLETED
-    Owner: Argaaa
-]]
+--[[
+    SLINGERHUB - STEALTH OWNER EDITION
+    Bypass: Anti-Rank Stealth V6
+    UI: Kavo Library (Ultra Light & Stable for Mobile)
+--]]
 
--- [ BLATANT V1: THE FOUNDATION ]
--- Fokus pada pergerakan dasar dan serangan simpel
-local Blatant_V1 = {
-    Speed = function(val)
-        -- Hard-coding walkspeed bypass
-        game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = val
-    end,
-    InfiniteJump = function()
-        game:GetService("UserInputService").JumpRequest:Connect(function()
-            game.Players.LocalPlayer.Character.Humanoid:ChangeState("Jumping")
-        end)
-    end
-}
-
--- [ BLATANT V2: THE AGGRESSOR ]
--- Penambahan fitur Combat yang lebih berisiko dan agresif
-local Blatant_V2 = {
-    KillAura = function(range)
-        spawn(function()
-            while task.wait() do
-                for _, v in pairs(game.Players:GetPlayers()) do
-                    if v ~= game.Players.LocalPlayer and v.Character then
-                        local dist = (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - v.Character.HumanoidRootPart.Position).Magnitude
-                        if dist <= range then
-                            -- Remote Spamming (V2 menggunakan loop lebih cepat)
-                            local remote = game:GetService("ReplicatedStorage"):FindFirstChild("Attack")
-                            remote:FireServer(v.Character)
-                        end
-                    end
-                end
-            end
-        end)
-    end,
-    AutoBlock = function()
-        -- Memaksa state karakter untuk selalu menangkis/blocking
-        game:GetService("ReplicatedStorage").Remotes.Block:FireServer(true)
-    end
-}
-
--- [ BLATANT V3: THE ANNIHILATOR (LATEST) ]
--- Versi paling berbahaya dengan manipulasi metatable dan server-side crashers
-local Blatant_V3 = {
-    FlyBypass = function()
-        -- Metode Flying yang tidak terdeteksi oleh raycast anti-cheat
-        local bodyVel = Instance.new("BodyVelocity")
-        bodyVel.Velocity = Vector3.new(0, 0, 0)
-        bodyVel.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-        bodyVel.Parent = game.Players.LocalPlayer.Character.HumanoidRootPart
-    end,
+-- ====== [1] STEALTH BYPASS (DIJAMIN TIDAK TERDETEKSI) ======
+pcall(function()
+    local LP = game:GetService("Players").LocalPlayer
     
-    HitboxGod = function()
-        -- Versi V3: Mengubah seluruh part musuh menjadi area hit (bukan hanya torso)
-        for _, v in pairs(game.Players:GetPlayers()) do
-            if v ~= game.Players.LocalPlayer and v.Character then
-                for _, part in pairs(v.Character:GetChildren()) do
-                    if part:IsA("BasePart") then
-                        part.Size = Vector3.new(30, 30, 30)
-                        part.CanCollide = false
-                        part.Transparency = 0.8
-                    end
-                end
-            end
-        end
-    end,
-
-    ReachHack = function()
-        -- Memanipulasi tool grip untuk jangkauan serangan tak terbatas
-        local tool = game.Players.LocalPlayer.Character:FindFirstChildOfClass("Tool")
-        if tool then
-            local handle = tool:FindFirstChild("Handle")
-            if handle then
-                handle.Size = Vector3.new(0, 0, 60) -- Menambah panjang senjata secara virtual
-            end
-        end
+    -- Mengunci fungsi Kick agar tidak bisa dipanggil oleh game
+    local function disableKick()
+        LP.Kick = function() return nil end
     end
+    disableKick()
+    LP.CharacterAdded:Connect(disableKick)
+
+    -- Memblokir sinyal Destruct tanpa menggunakan hookmetamethod yang berat
+    local raw = getrawmetatable(game)
+    setreadonly(raw, false)
+    local old = raw.__namecall
+    raw.__namecall = newcclosure(function(self, ...)
+        local method = getnamecallmethod()
+        if method == "Kick" or tostring(self):find("Destruct") then
+            return nil
+        end
+        return old(self, ...)
+    end)
+end)
+
+-- ====== [2] LIGHTWEIGHT UI (KAVO) ======
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
+local Window = Library.CreateLib("SlingerHub | Team eyeGPT", "Midnight")
+
+-- CONFIG
+local Config = {
+    AutoFish = false,
+    FishingMode = "Instant",
+    CompleteDelay = 0.42,
+    CancelDelay = 0.3,
+    InstantDelay = 0.65,
+    SpamPower = 40
 }
 
--- [ ROOT INJECTION: COMBINING ALL VERSIONS ]
-local function ExecuteBlatant(version)
-    print("eyeGPT: Injecting Blatant " .. version)
-    if version == "V1" then
-        Blatant_V1.Speed(100)
-        Blatant_V1.InfiniteJump()
-    elseif version == "V2" then
-        Blatant_V2.KillAura(50)
-        Blatant_V2.AutoBlock()
-    elseif version == "V3" then
-        Blatant_V3.FlyBypass()
-        Blatant_V3.HitboxGod()
-        Blatant_V3.ReachHack()
-    end
-end
+-- ====== [3] TABS SETUP (IDENTIK PAHAJI) ======
+local Main = Window:NewTab("Main")
+local Exclusive = Window:NewTab("Exclusive")
+local Teleport = Window:NewTab("Teleport")
 
--- Eksekusi V3 sebagai versi terkuat untuk yang mulia
-ExecuteBlatant("V3")
+-- --- TAB: MAIN ---
+local MainSection = Main:NewSection("Automation")
+MainSection:NewToggle("Auto Fishing", "Mulai memancing otomatis", function(v)
+    Config.AutoFish = v
+end)
+
+-- --- TAB: EXCLUSIVE (PAHAJI STYLE) ---
+local ExSection = Exclusive:NewSection("Ultra Blatant V3 & Instant")
+ExSection:NewDropdown("Mode Selection", "Pilih mode pancing", {"Legit", "Instant", "Ultra Blatant V3"}, function(v)
+    Config.FishingMode = v
+end)
+
+ExSection:NewTextBox("Instant Delay", "Default: 0.65", function(v)
+    Config.InstantDelay = tonumber(v) or 0.65
+end)
+
+ExSection:NewTextBox("Complete Delay", "Default: 0.42", function(v)
+    Config.CompleteDelay = tonumber(v) or 0.42
+end)
+
+-- --- TAB: TELEPORT ---
+local TeleSection = Teleport:NewSection("Locations")
+TeleSection:NewButton("Keepers Altar", "Teleport ke Altar", function()
+    game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(1350, -100, -550)
+end)
+
+-- ====== [4] CORE ENGINE ======
+task.spawn(function()
+    local ReplicatedStorage = game:GetService("ReplicatedStorage")
+    local net = ReplicatedStorage:WaitForChild("Packages")._Index["sleitnick_net@0.2.0"].net
+    local Events = {
+        fishing = net:WaitForChild("RE/FishingCompleted"),
+        charge = net:WaitForChild("RF/ChargeFishingRod"),
+        minigame = net:WaitForChild("RF/RequestFishingMinigameStarted")
+    }
+
+    while true do
+        if Config.AutoFish then
+            pcall(function()
+                Events.charge:InvokeServer(1755848498.4834)
+                Events.minigame:InvokeServer(1.2854545116425, 1)
+                
+                if Config.FishingMode == "Legit" then task.wait(2.5)
+                elseif Config.FishingMode == "Instant" then task.wait(Config.InstantDelay)
+                else task.wait(Config.CompleteDelay) end
+                
+                if Config.FishingMode == "Ultra Blatant V3" then
+                    for i = 1, Config.SpamPower do Events.fishing:FireServer() end
+                else
+                    Events.fishing:FireServer()
+                end
