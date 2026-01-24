@@ -1,131 +1,102 @@
 --[[
-    SlingerHub - GOD MODE EDITION
-    Status: Owner Mode / Anti-Self Destruct / DNS Fixed
-    Authorized: ArgaaaAi
+    SlingerHub - SUPREME OWNER EDITION
+    Status: FULL FEATURES / ANTI-CRASH / BLATANT
+    Authorized by: ArgaaaAi
 --]]
 
--- ====== BAGIAN 1: ANTI-SELF DESTRUCT (WAJIB DI ATAS) ======
+-- 1. ULTIMATE BYPASS (Melindungi dari Kick & Self-Destruct)
 pcall(function()
-    local oldHook
-    oldHook = hookmetamethod(game, "__namecall", function(self, ...)
+    local mt = getrawmetatable(game)
+    setreadonly(mt, false)
+    local old = mt.__namecall
+    mt.__namecall = newcclosure(function(self, ...)
         local method = getnamecallmethod()
-        if method == "Kick" or method == "kick" then
-            warn("👁️ eyeGPT: Melindungi Owner dari upaya Kick/Self-Destruct.")
-            return nil
-        end
-        return oldHook(self, ...)
+        if method == "Kick" or method == "kick" then return nil end
+        return old(self, ...)
     end)
-    
-    -- Anti-Crash & Asset Fixer
     game:GetService("ContentProvider").PreloadAsync = function() return end
-    settings().Rendering.QualityLevel = 1
 end)
 
--- ====== BAGIAN 2: UI & CONFIG ======
-local WindUI = loadstring(game:HttpGet("https://tree-hub.vercel.app/api/UI/WindUI"))()
-local Window = WindUI:CreateWindow({
-    Title = "SlingerHub 👁️ [GOD MODE]",
-    Icon = "rbxassetid://10723343321",
-    Author = "ArgaaaAi",
-    Folder = "SlingerHub_GodMode"
-})
+-- 2. LIBRARY LOADING (Kavo - Lebih Ringan untuk Mobile)
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
+local Window = Library.CreateLib("SlingerHub 👁️", "GrapeTheme")
 
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
+-- 3. CONFIG & EVENTS
+local Config = {AutoFish = false, Blatant = false, Power = 20, Delay = 0.4, AutoSell = false}
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
-local Config = {
-    AutoFish = false,
-    BlatantMode = false,
-    SpamPower = 30,
-    FishDelay = 0.35,
-    AutoSell = false
-}
-
-local net = ReplicatedStorage:WaitForChild("Packages", 15)._Index["sleitnick_net@0.2.0"].net
+local net = ReplicatedStorage:WaitForChild("Packages", 20)._Index["sleitnick_net@0.2.0"].net
 local Events = {
     fishing = net:WaitForChild("RE/FishingCompleted"),
-    sell = net:WaitForChild("RF/SellAllItems"),
     charge = net:WaitForChild("RF/ChargeFishingRod"),
     minigame = net:WaitForChild("RF/RequestFishingMinigameStarted"),
-    equip = net:WaitForChild("RE/EquipToolFromHotbar")
+    equip = net:WaitForChild("RE/EquipToolFromHotbar"),
+    sell = net:WaitForChild("RF/SellAllItems")
 }
 
--- ====== BAGIAN 3: ENGINE ======
-local function runBlatant()
-    pcall(function()
-        Events.equip:FireServer(1)
-        task.spawn(function()
-            Events.charge:InvokeServer(1755848498.4834)
-            task.wait(0.01)
-            Events.minigame:InvokeServer(1.2854545116425, 1)
-        end)
-        task.wait(Config.FishDelay)
-        for i = 1, Config.SpamPower do
-            Events.fishing:FireServer()
-            task.wait(0.01)
+-- 4. MAIN TAB
+local Main = Window:NewTab("Main")
+local Section = Main:NewSection("Master Fishing")
+
+Section:NewToggle("Auto Fishing", "Mulai memancing otomatis", function(v)
+    Config.AutoFish = v
+    task.spawn(function()
+        while Config.AutoFish do
+            pcall(function()
+                Events.equip:FireServer(1)
+                task.spawn(function()
+                    Events.charge:InvokeServer(1755848498.4834)
+                    task.wait(0.01)
+                    Events.minigame:InvokeServer(1.2854545116425, 1)
+                end)
+                task.wait(Config.Delay)
+                local loop = Config.Blatant and Config.Power or 1
+                for i = 1, loop do
+                    Events.fishing:FireServer()
+                    if Config.Blatant then task.wait(0.01) end
+                end
+            end)
+            task.wait(0.1)
         end
     end)
-end
+end)
 
--- ====== BAGIAN 4: UI TABS ======
-local MainTab = Window:CreateTab({ Name = "Main Menu", Icon = "rbxassetid://10723343321" })
+Section:NewToggle("Blatant Mode", "Kecepatan brutal", function(v)
+    Config.Blatant = v
+end)
 
-MainTab:AddSection("Master Control")
+Section:NewSlider("Blatant Power", "Jumlah spam reel", 150, 10, function(v)
+    Config.Power = v
+end)
 
-MainTab:AddToggle({
-    Title = "Auto Fishing",
-    Default = false,
-    Callback = function(v) 
-        Config.AutoFish = v 
-        task.spawn(function()
-            while Config.AutoFish do
-                if Config.BlatantMode then runBlatant() else
-                    pcall(function()
-                        Events.equip:FireServer(1)
-                        Events.charge:InvokeServer(1755848498.4834)
-                        Events.minigame:InvokeServer(1.2854545116425, 1)
-                        task.wait(1.5)
-                        Events.fishing:FireServer()
-                    end)
-                end
-                task.wait(0.1)
-            end
-        end)
+Section:NewSlider("Bite Delay", "Kecepatan ikan gigit", 2, 0, function(v)
+    Config.Delay = v
+end)
+
+-- 5. WORLD & MISC TAB
+local World = Window:NewTab("Misc")
+local MSection = World:NewSection("Utility")
+
+MSection:NewToggle("Auto Sell All", "Jual ikan otomatis", function(v)
+    Config.AutoSell = v
+    task.spawn(function()
+        while Config.AutoSell do
+            Events.sell:InvokeServer()
+            task.wait(20)
+        end
+    end)
+end)
+
+MSection:NewButton("Instant Sell", "Jual sekarang", function()
+    Events.sell:InvokeServer()
+end)
+
+MSection:NewButton("FPS Optimizer", "Mengurangi lag", function()
+    settings().Rendering.QualityLevel = 1
+    for _, v in pairs(game:GetDescendants()) do
+        if v:IsA("BasePart") and not v.Parent:FindFirstChild("Humanoid") then
+            v.Material = Enum.Material.SmoothPlastic
+        end
     end
-})
+end)
 
-MainTab:AddToggle({
-    Title = "Blatant Mode (Dangerous)",
-    Default = false,
-    Callback = function(v) Config.BlatantMode = v end
-})
-
-MainTab:AddSlider({
-    Title = "Blatant Power",
-    Min = 10, Max = 150, Default = 30,
-    Callback = function(v) Config.SpamPower = v end
-})
-
-local ExtraTab = Window:CreateTab({ Name = "Extra", Icon = "rbxassetid://10709819149" })
-ExtraTab:AddToggle({
-    Title = "Auto Sell",
-    Default = false,
-    Callback = function(v)
-        Config.AutoSell = v
-        task.spawn(function()
-            while Config.AutoSell do
-                Events.sell:InvokeServer()
-                task.wait(20)
-            end
-        end)
-    end
-})
-
-Window:SelectTab(MainTab)
-
-WindUI:Notify({
-    Title = "SlingerHub Loaded",
-    Content = "Sistem Pertahanan & Eksploitasi Aktif, Yang Mulia.",
-    Duration = 5
-})
+print("SlingerHub Full Loaded!")
