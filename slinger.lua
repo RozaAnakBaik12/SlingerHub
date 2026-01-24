@@ -1,150 +1,91 @@
 --[[
-    SLINGERHUB - GOD-LEVEL STEALTH
-    NO EXTERNAL UI (Mencegah Self-Destruct Total)
-    Fitur: Instant, Blatant V3, Auto-Sell
---]]
+	SLINGERHUB - MODERN INTERFACE ONLY
+	Theme: Indigo Dark (Modern & Minimalist)
+	Status: Safe Mode (No Features Active)
+]]
 
--- 1. HARD-BYPASS (Anti-Kick & Anti-Rank Check)
-pcall(function()
-    local LP = game:GetService("Players").LocalPlayer
-    LP.Kick = function() return nil end
-    local mt = getrawmetatable(game)
-    setreadonly(mt, false)
-    local old = mt.__namecall
-    mt.__namecall = newcclosure(function(self, ...)
-        if getnamecallmethod() == "Kick" or tostring(self):find("Destruct") then return nil end
-        return old(self, ...)
-    end)
-end)
+-------------------------------------------
+----- =======[ Load WindUI ] =======
+-------------------------------------------
+local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
 
--- 2. NATIVE UI (Dibuat manual agar tidak kena deteksi GitHub)
-local ScreenGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
-local Frame = Instance.new("Frame", ScreenGui)
-Frame.Size = UDim2.new(0, 200, 0, 250)
-Frame.Position = UDim2.new(0.1, 0, 0.2, 0)
-Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-Frame.Active = true
-Frame.Draggable = true
+-------------------------------------------
+----- =======[ LOAD WINDOW ] =======
+-------------------------------------------
+local Window = WindUI:CreateWindow({
+    Title = "SlingerHub - Premium",
+    Icon = "fish",
+    Author = "by Team eyeGPT",
+    Folder = "SlingerHub_Safe",
+    Size = UDim2.fromOffset(550, 400),
+    Theme = "Indigo",
+    KeySystem = false
+})
 
-local Title = Instance.new("TextLabel", Frame)
-Title.Size = UDim2.new(1, 0, 0, 30)
-Title.Text = "SLINGERHUB STEALTH"
-Title.TextColor3 = Color3.new(1, 1, 1)
-Title.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+-- Mematikan notifikasi di tengah agar tidak mengganggu
+WindUI:SetNotificationLower(true)
 
--- CONFIG
-local Config = { Auto = false, Mode = "Instant", Delay = 0.65 }
+WindUI:Notify({
+	Title = "SlingerHub",
+	Content = "Interface Loaded Successfully!",
+	Duration = 5,
+	Icon = "check-circle"
+})
 
--- BUTTON GENERATOR
-local function CreateBtn(name, pos, callback)
-    local btn = Instance.new("TextButton", Frame)
-    btn.Size = UDim2.new(0.9, 0, 0, 40)
-    btn.Position = UDim2.new(0.05, 0, 0, pos)
-    btn.Text = name
-    btn.Callback = btn.MouseButton1Click:Connect(callback)
-end
+-------------------------------------------
+----- =======[ MAIN TABS ] =======
+-------------------------------------------
+-- Membuat struktur tab persis seperti gaya Chloe X/Pahaji
+local MainTab = Window:Tab({
+	Title = "Main",
+	Icon = "home"
+})
 
-CreateBtn("TOGGLE AUTO: OFF", 40, function(self) 
-    Config.Auto = not Config.Auto
-    Frame:FindFirstChild("TOGGLE AUTO: OFF").Text = "AUTO: " .. (Config.Auto and "ON" or "OFF")
-end)
+local FishingTab = Window:Tab({
+	Title = "Fishing",
+	Icon = "fish"
+})
 
-CreateBtn("MODE: INSTANT", 90, function()
-    if Config.Mode == "Instant" then Config.Mode = "Blatant" else Config.Mode = "Instant" end
-    Frame:FindFirstChild("MODE: INSTANT").Text = "MODE: " .. Config.Mode
-end)
+local UtilityTab = Window:Tab({
+    Title = "Utility",
+    Icon = "settings"
+})
 
-CreateBtn("TELEPORT ALTAR", 140, function()
-    game:GetService("Players").LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(1350, -100, -550)
-end)
+local SettingsTab = Window:Tab({ 
+	Title = "Settings", 
+	Icon = "user-cog" 
+})
 
--- 3. ENGINE (Logic dari Pahaji/Chloe X)
-task.spawn(function()
-    local net = game:GetService("ReplicatedStorage"):WaitForChild("Packages")._Index["sleitnick_net@0.2.0"].net
-    while true do
-        if Config.Auto then
-            pcall(function()
-                game:GetService("ReplicatedStorage").RE/EquipToolFromHotbar:FireServer(1)
-                net["RF/ChargeFishingRod"]:InvokeServer(workspace:GetServerTimeNow())
-                net["RF/RequestFishingMinigameStarted"]:InvokeServer(-0.75, 1)
-                
-                -- Delay 0.65 (Instant) atau 0.42 (Blatant)
-                task.wait(Config.Mode == "Instant" and 0.65 or 0.42)
-                net["RE/FishingCompleted"]:FireServer()
-            end)
-        end
-        task.wait(0.5)
+-------------------------------------------
+----- =======[ PLACEHOLDERS ] =======
+-------------------------------------------
+-- Mengisi tab dengan label kosong agar GUI tidak terlihat sepi
+MainTab:Section({ Title = "Welcome, Owner" }):Label({
+    Title = "System Status",
+    Content = "Operational - Safe Mode"
+})
+
+FishingTab:Section({ Title = "Automation" }):Paragraph({
+    Title = "Waiting for Input",
+    Content = "Fitur pancing dinonaktifkan sementara untuk pengujian GUI."
+})
+
+UtilityTab:Section({ Title = "Optimization" }):Button({
+    Title = "FPS Boost",
+    Content = "Clean world textures",
+    Callback = function()
+        print("Optimizing...")
     end
-end)
-            local name = itemNamePath.Text
-            if RodDelaysV2[name] then
-                return name
-            end
-        end
-    end
-    return nil
-end
+})
 
-local function updateDelayBasedOnRodV2(showNotify)
-    if FuncAutoFishV2.delayInitializedV2 then return end
-    local rodName = getValidRodNameV2()
-    if rodName and RodDelaysV2[rodName] then
-        customDelayV2 = RodDelaysV2[rodName].custom
-        BypassDelayV2 = RodDelaysV2[rodName].bypass
-        FuncAutoFishV2.delayInitializedV2 = true
-        if showNotify and FuncAutoFishV2.autofishV2 then
-            NotifySuccess("Rod Detected", string.format("Detected Rod: %s | Delay: %.2fs | Bypass: %.2fs", rodName, customDelayV2, BypassDelayV2))
-        end
-    else
-        customDelayV2 = 10
-        BypassDelayV2 = 1
-        FuncAutoFishV2.delayInitializedV2 = true
-        if showNotify and FuncAutoFishV2.autofishV2 then
-            NotifyWarning("Rod Detection Failed", "No valid rod found. Default delay applied.")
-        end
-    end
-end
+SettingsTab:Section({ Title = "Configuration" }):Button({
+	Title = "Unload UI",
+	Callback = function()
+		Window:Close()
+	end,
+})
 
-local function setupRodWatcher()
-    local player = Players.LocalPlayer
-    local display = player.PlayerGui:WaitForChild("Backpack"):WaitForChild("Display")
-    display.ChildAdded:Connect(function()
-        task.wait(0.05)
-        if not FuncAutoFishV2.delayInitializedV2 then
-            updateDelayBasedOnRodV2(true)
-        end
-    end)
-end
-setupRodWatcher()
-
--- NEW AUTO SELL
-local lastSellTime = 0
-local AUTO_SELL_THRESHOLD = 60 -- Sell when non-favorited fish > 60
-local AUTO_SELL_DELAY = 60 -- Minimum seconds between sells
-
-local function getNetFolder() return net end
-
-local function startAutoSell()
-    task.spawn(function()
-        while state.AutoSell do
-            pcall(function()
-                if not Replion then return end
-                local DataReplion = Replion.Client:WaitReplion("Data")
-                local items = DataReplion and DataReplion:Get({"Inventory","Items"})
-                if type(items) ~= "table" then return end
-
-                -- Count non-favorited fish
-                local unfavoritedCount = 0
-                for _, item in ipairs(items) do
-                    if not item.Favorited then
-                        unfavoritedCount = unfavoritedCount + (item.Count or 1)
-                    end
-                end
-
-                -- Only sell if above threshold and delay passed
-                if unfavoritedCount >= AUTO_SELL_THRESHOLD and os.time() - lastSellTime >= AUTO_SELL_DELAY then
-                    local netFolder = getNetFolder()
-                    if netFolder then
+WindUI:Init()
                         local sellFunc = netFolder:FindFirstChild("RF/SellAllItems")
                         if sellFunc then
                             task.spawn(sellFunc.InvokeServer, sellFunc)
