@@ -1,53 +1,50 @@
-import customtkinter as ctk
+import cv2
+import numpy as np
+import pyautogui
+import time
+import keyboard
 
-# [ SHADOW_X ]: SLINGERHUB EXECUTOR INTERFACE 🤫
-ctk.set_appearance_mode("dark")
+# --- KONFIGURASI OWNER ---
+# tentukan area layar tempat indikator pancing muncul (x, y, width, height)
+# gunakan tools screen snippet untuk menentukan koordinat ini
+FISHING_ZONE = (700, 400, 200, 200) 
+TARGET_BGR_COLOR = [0, 0, 255] # contoh: warna merah pada bar pancing
+THRESHOLD = 30 # toleransi kemiripan warna
 
-class SlingerHub(ctk.CTk):
-    def __init__(self):
-        super().__init__()
-        # Title window ganti jadi SlingerHub 👿
-        self.title(" [ SHADOW_X ] : SLINGERHUB ")
-        self.geometry("700x400")
-        self.configure(fg_color="#0f0f1e") 
+print("------------------------------------------------")
+print("eyeGPT FISH-IT SCRIPT: ONLINE")
+print("tekan 'q' untuk menghentikan operasi, tuan.")
+print("------------------------------------------------")
 
-        # --- SIDEBAR (KIRI) ---
-        self.sidebar = ctk.CTkFrame(self, width=150, corner_radius=0, fg_color="#16162d")
-        self.sidebar.pack(side="left", fill="y")
+def start_fishing():
+    while True:
+        if keyboard.is_pressed('q'):
+            print("LOG: operasi dihentikan oleh owner.")
+            break
+
+        # ambil screenshot pada area yang ditentukan
+        screenshot = pyautogui.screenshot(region=FISHING_ZONE)
+        frame = np.array(screenshot)
+        frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+
+        # deteksi warna target dalam area tersebut
+        lower_bound = np.array([max(c - THRESHOLD, 0) for c in TARGET_BGR_COLOR])
+        upper_bound = np.array([min(c + THRESHOLD, 255) for c in TARGET_BGR_COLOR])
         
-        # Label utama ganti jadi SlingerHub 🤫
-        self.logo = ctk.CTkLabel(self.sidebar, text="SLINGERHUB", font=("Inter", 18, "bold"), text_color="#a2a2ff")
-        self.logo.pack(pady=20)
+        mask = cv2.inRange(frame, lower_bound, upper_bound)
+        
+        # jika warna terdeteksi (ikan memakan umpan)
+        if np.any(mask):
+            print("LOG: ikan terdeteksi! menarik pancing...")
+            pyautogui.click() # klik untuk menarik
+            time.sleep(2) # delay agar tidak spam (menghindari deteksi bot)
+            
+            print("LOG: melemparkan umpan kembali...")
+            pyautogui.click() # klik untuk melempar umpan lagi
+            time.sleep(1)
 
-        menus = ["Main", "Exclusive", "Shop", "Teleport", "Settings"]
-        for menu in menus:
-            btn = ctk.CTkButton(self.sidebar, text=menu, fg_color="transparent", anchor="w", hover_color="#25254d")
-            btn.pack(fill="x", padx=10, pady=5)
-
-        # --- MAIN CONTENT ---
-        self.main_frame = ctk.CTkFrame(self, fg_color="transparent")
-        self.main_frame.pack(side="right", expand=True, fill="both", padx=20, pady=20)
-
-        self.title_label = ctk.CTkLabel(self.main_frame, text="Ultra Blatant V3", font=("Inter", 18, "bold"))
-        self.title_label.place(x=10, y=10)
-
-        self.blatant_switch = ctk.CTkSwitch(self.main_frame, text="", progress_color="#7a2dfc")
-        self.blatant_switch.place(x=350, y=15)
-
-        self.create_input("Complete Delay", "0.258", 60)
-        self.create_input("Cancel Delay", "0.305", 110)
-        self.create_input("Re-Cast Delay", "0.00001", 160)
-
-        self.fps_btn = ctk.CTkButton(self, text="Unlock FPS", fg_color="#7a2dfc", width=120)
-        self.fps_btn.place(x=200, y=320)
-
-    def create_input(self, label_text, default_val, y_pos):
-        lbl = ctk.CTkLabel(self.main_frame, text=label_text, font=("Inter", 14))
-        lbl.place(x=10, y=y_pos)
-        entry = ctk.CTkEntry(self.main_frame, width=150, fg_color="#1c1c3a", border_color="#3a3a5e")
-        entry.insert(0, default_val)
-        entry.place(x=210, y=y_pos)
+        time.sleep(0.05) # kecepatan pemindaian frame
 
 if __name__ == "__main__":
-    app = SlingerHub()
-    app.mainloop()
+    time.sleep(3) # memberi waktu owner untuk pindah ke jendela game
+    start_fishing()
